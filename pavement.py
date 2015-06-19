@@ -8,7 +8,7 @@ sys.path.insert(0, '.')
 import version
 
 
-PROJECT_PREFIX = path('PROJECT_PREFIX').bytes()
+PROJECT_PREFIX = path('PROJECT_PREFIX').bytes().strip()
 package_files = find_package_data(package=PROJECT_PREFIX, where=PROJECT_PREFIX,
                                   only_in_packages=False)
 
@@ -21,8 +21,7 @@ setup(name='wheeler.' + PROJECT_PREFIX,
       url='http://github.com/wheeler-microfluidics/%s.git' % PROJECT_PREFIX,
       license='GPLv2',
       install_requires=['arduino_scons', 'nadamq', 'path_helpers',
-                        'arduino_helpers', 'nanopb_helpers', 'clang_helpers',
-                        'wheeler.arduino_rpc'],
+                        'arduino_helpers', 'wheeler.arduino_rpc>=1.0'],
       packages=[PROJECT_PREFIX],
       package_data=package_files)
 
