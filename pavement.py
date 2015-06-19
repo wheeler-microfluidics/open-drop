@@ -3,6 +3,7 @@ import sys
 
 from paver.easy import task, needs, path, sh, cmdopts, options
 from paver.setuputils import setup, find_package_data
+import base_node_rpc
 
 sys.path.insert(0, '.')
 import version
@@ -40,7 +41,7 @@ def generate_command_processor_header():
     from arduino_rpc.rpc_data_frame import get_c_header_code
 
     sketch_dir = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX)
-    lib_dir = path(PROJECT_PREFIX).joinpath('Arduino', 'library')
+    lib_dir = base_node_rpc.get_lib_directory()
     input_classes = ['BaseNode', 'Node']
     input_headers = [lib_dir.joinpath('BaseNode.h'),
                      sketch_dir.joinpath('Node.h')]
@@ -59,7 +60,7 @@ def generate_python_code():
     from arduino_rpc.rpc_data_frame import get_python_code
 
     sketch_dir = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX)
-    lib_dir = path(PROJECT_PREFIX).joinpath('Arduino', 'library')
+    lib_dir = base_node_rpc.get_lib_directory()
     output_file = path(PROJECT_PREFIX).joinpath('node.py')
     input_classes = ['BaseNode', 'Node']
     input_headers = [lib_dir.joinpath('BaseNode.h'),

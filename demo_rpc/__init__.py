@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 import nadamq
+import base_node_rpc
 from path_helpers import path
 
 
@@ -13,10 +14,6 @@ def get_sketch_directory():
     Return directory containing the Arduino sketch.
     '''
     return package_path().joinpath('Arduino', package_path().name)
-
-
-def get_lib_directory():
-    return package_path().joinpath('Arduino', 'library')
 
 
 def get_includes():
@@ -34,8 +31,8 @@ def get_includes():
         ...
 
     '''
-    return [get_sketch_directory(),
-            get_lib_directory()] + nadamq.get_includes()
+    return ([get_sketch_directory()] + base_node_rpc.get_includes() +
+            nadamq.get_includes())
 
 
 def get_sources():

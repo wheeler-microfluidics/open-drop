@@ -7,7 +7,7 @@
 class Node : public BaseNode {
 public:
   Node() : BaseNode() {}
-  uint32_t test() { return 128; }
+  uint32_t test_method() { return 42; }
 };
 
 
