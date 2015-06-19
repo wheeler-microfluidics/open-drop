@@ -16,10 +16,11 @@ uint8_t i2c_response_size_sent = false;
 FixedPacket i2c_packet;
 
 Node node_obj;
-node::CommandProcessor<Node> command_processor(node_obj);
+base_node_rpc::CommandProcessor<Node> command_processor(node_obj);
 
 #ifndef DISABLE_SERIAL
-typedef CommandPacketHandler<Stream, node::CommandProcessor<Node> > Handler;
+typedef CommandPacketHandler
+  <Stream, base_node_rpc::CommandProcessor<Node> > Handler;
 typedef PacketReactor<PacketParser<FixedPacket>, Stream, Handler> Reactor;
 
 FixedPacket packet;

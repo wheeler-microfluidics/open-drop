@@ -39,13 +39,16 @@ def generate_command_processor_header():
     from arduino_rpc.code_gen import write_code
     from arduino_rpc.rpc_data_frame import get_c_header_code
 
-    input_header = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX,
-                                                 'Node.h')
+    sketch_dir = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX)
+    input_classes = ['BaseNode', 'Node']
+    input_headers = [sketch_dir.joinpath('%s.h') % c for c in input_classes]
+
     output_header = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX,
                                                   'NodeCommandProcessor.h')
-    f_get_code = lambda *args_: get_c_header_code(*(args_ + ('node', )))
+    f_get_code = lambda *args_: get_c_header_code(*(args_ +
+                                                    (PROJECT_PREFIX, )))
 
-    write_code(input_header, 'Node', output_header, f_get_code)
+    write_code(input_headers, input_classes, output_header, f_get_code)
 
 
 @task
@@ -53,10 +56,11 @@ def generate_python_code():
     from arduino_rpc.code_gen import write_code
     from arduino_rpc.rpc_data_frame import get_python_code
 
-    input_header = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX,
-                                                 'Node.h')
+    sketch_dir = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX)
     output_file = path(PROJECT_PREFIX).joinpath('node.py')
-    write_code(input_header, 'Node', output_file, get_python_code)
+    input_classes = ['BaseNode', 'Node']
+    input_headers = [sketch_dir.joinpath('%s.h') % c for c in input_classes]
+    write_code(input_headers, input_classes, output_file, get_python_code)
 
 
 @task
