@@ -1,7 +1,7 @@
 #ifndef ___NODE__H___
 #define ___NODE__H___
 
-#include "BaseNode.h"
+#include <BaseNode.h>
 
 
 class Node : public BaseNode {

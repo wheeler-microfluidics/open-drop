@@ -15,8 +15,8 @@ def get_sketch_directory():
     return package_path().joinpath('Arduino', package_path().name)
 
 
-def get_nanopb_directory():
-    return package_path().joinpath('libs', 'nanopb')
+def get_lib_directory():
+    return package_path().joinpath('Arduino', 'library')
 
 
 def get_includes():
@@ -35,7 +35,7 @@ def get_includes():
 
     '''
     return [get_sketch_directory(),
-            get_nanopb_directory()] + nadamq.get_includes()
+            get_lib_directory()] + nadamq.get_includes()
 
 
 def get_sources():
