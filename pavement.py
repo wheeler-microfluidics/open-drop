@@ -6,130 +6,62 @@ from paver.setuputils import setup, find_package_data
 
 sys.path.insert(0, '.')
 import version
-try:
-    from arduino_rpc.proto import (CodeGenerator,
-                                   generate_nanopb_code as
-                                   _generate_nanopb_code,
-                                   generate_pb_python_module as
-                                   _generate_pb_python_module,
-                                   generate_protobuf_definitions as
-                                   _generate_protobuf_definitions,
-                                   generate_rpc_buffer_header as
-                                   _generate_rpc_buffer_header,
-                                   generate_command_processor_header as
-                                   _generate_command_processor_header,
-                                   generate_ext_protobuf_definitions as
-                                   _generate_ext_protobuf_definitions,
-                                   generate_ext_message_unions_header as
-                                   _generate_ext_message_unions_header)
-except ImportError:
-    import warnings
-
-    warnings.warn('Could not import `clang`-based code-generator.')
 
 
-arduino_rpc_files = find_package_data(package='arduino_rpc',
-                                      where='arduino_rpc',
-                                      only_in_packages=False)
-#pprint(arduino_rpc_files)
+PROJECT_PREFIX = path('PROJECT_PREFIX').bytes()
+package_files = find_package_data(package=PROJECT_PREFIX, where=PROJECT_PREFIX,
+                                  only_in_packages=False)
 
-PROTO_PREFIX = 'commands'
-PROJECT_PREFIX = 'arduino_rpc'
-
-#DEFAULT_ARDUINO_BOARDS = ['uno', 'mega2560']
-DEFAULT_ARDUINO_BOARDS = ['uno']
-setup(name='wheeler.arduino_rpc',
+DEFAULT_ARDUINO_BOARDS = ['uno', 'mega2560']
+setup(name='wheeler.' + PROJECT_PREFIX,
       version=version.getVersion(),
       description='Arduino RPC node packaged as Python package.',
       author='Christian Fobel',
       author_email='christian@fobel.net',
-      url='http://github.com/wheeler-microfluidics/arduino_rpc.git',
+      url='http://github.com/wheeler-microfluidics/%s.git' % PROJECT_PREFIX,
       license='GPLv2',
       install_requires=['arduino_scons', 'nadamq', 'path_helpers',
-                        'arduino_helpers', 'nanopb_helpers', 'clang_helpers'],
-      packages=['arduino_rpc'],
-      package_data=arduino_rpc_files)
-
-
-@task
-def generate_protobuf_definitions():
-    from arduino_rpc import get_sketch_directory, package_path
-
-    protobuf_dir = package_path().joinpath('protobuf').abspath()
-    _generate_protobuf_definitions(get_sketch_directory(), protobuf_dir)
-
-
-@task
-def generate_command_processor_header():
-    from arduino_rpc import get_sketch_directory
-
-    _generate_command_processor_header(get_sketch_directory(),
-                                       get_sketch_directory())
+                        'arduino_helpers', 'nanopb_helpers', 'clang_helpers',
+                        'wheeler.arduino_rpc'],
+      packages=[PROJECT_PREFIX],
+      package_data=package_files)
 
 
 @task
 def generate_rpc_buffer_header():
-    from arduino_rpc import get_sketch_directory
+    import arduino_rpc.rpc_data_frame as rpc_df
 
-    _generate_rpc_buffer_header(get_sketch_directory())
-
-
-@task
-def generate_ext_protobuf_definitions():
-    from arduino_rpc import get_sketch_directory, package_path
-
-    protobuf_dir = package_path().joinpath('Arduino', 'library').abspath()
-    protobuf_dir.makedirs_p()
-    _generate_ext_protobuf_definitions(PROJECT_PREFIX, get_sketch_directory(),
-                                       protobuf_dir)
+    output_dir = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX)
+    rpc_df.generate_rpc_buffer_header(output_dir)
 
 
 @task
-# Generate protocol buffer request and response definitions, implementing an
-# RPC API using the union message pattern suggested in the [`nanopb`][1]
-# examples.
-#
-# [1]: https://code.google.com/p/nanopb/source/browse/examples/using_union_messages/README.txt
-@needs('generate_ext_protobuf_definitions')
-def generate_ext_nanopb_code():
-    from arduino_rpc import get_sketch_directory, package_path
+def generate_command_processor_header():
+    from arduino_rpc.code_gen import write_code
+    from arduino_rpc.rpc_data_frame import get_c_header_code
 
-    protobuf_dir = package_path().joinpath('Arduino', 'library').abspath()
-    _generate_nanopb_code(protobuf_dir, protobuf_dir)
-    _generate_ext_message_unions_header(PROJECT_PREFIX, get_sketch_directory(),
-                                        protobuf_dir.joinpath('%s_message.h' %
-                                                              PROJECT_PREFIX))
+    input_header = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX,
+                                                 'Node.h')
+    output_header = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX,
+                                                  'NodeCommandProcessor.h')
+    f_get_code = lambda *args_: get_c_header_code(*(args_ + ('node', )))
+
+    write_code(input_header, 'Node', output_header, f_get_code)
 
 
 @task
-# Generate protocol buffer request and response definitions, implementing an
-# RPC API using the union message pattern suggested in the [`nanopb`][1]
-# examples.
-#
-# [1]: https://code.google.com/p/nanopb/source/browse/examples/using_union_messages/README.txt
-@needs('generate_protobuf_definitions')
-def generate_nanopb_code():
-    from arduino_rpc import get_sketch_directory, package_path
+def generate_python_code():
+    from arduino_rpc.code_gen import write_code
+    from arduino_rpc.rpc_data_frame import get_python_code
 
-    protobuf_dir = package_path().joinpath('protobuf').abspath()
-    sketch = get_sketch_directory()
-    _generate_nanopb_code(protobuf_dir, sketch)
+    input_header = path(PROJECT_PREFIX).joinpath('Arduino', PROJECT_PREFIX,
+                                                 'Node.h')
+    output_file = path(PROJECT_PREFIX).joinpath('node.py')
+    write_code(input_header, 'Node', output_file, get_python_code)
 
 
 @task
-@needs('generate_protobuf_definitions')
-def generate_pb_python_module():
-    from arduino_rpc import package_path
-
-    protobuf_dir = package_path().joinpath('protobuf').abspath()
-    output_dir = package_path().abspath()
-    _generate_pb_python_module(protobuf_dir, output_dir)
-
-
-@task
-@needs('generate_nanopb_code', 'generate_pb_python_module',
-       'generate_rpc_buffer_header', 'generate_command_processor_header',
-       'generate_ext_nanopb_code')
+@needs('generate_command_processor_header', 'generate_rpc_buffer_header')
 @cmdopts([('sconsflags=', 'f', 'Flags to pass to SCons.'),
           ('boards=', 'b', 'Comma-separated list of board names to compile '
            'for (e.g., `uno`).')])
@@ -145,7 +77,7 @@ def build_firmware():
 
 
 @task
-@needs('generate_setup', 'minilib', 'build_firmware',
+@needs('generate_setup', 'minilib', 'build_firmware', 'generate_python_code',
        'setuptools.command.sdist')
 def sdist():
     """Overrides sdist to make sure that our setup.py is generated."""

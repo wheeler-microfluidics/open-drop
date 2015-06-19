@@ -1,12 +1,12 @@
 import distutils.sysconfig
 import re
 import sys
+from importlib import import_module
 
 from path_helpers import path
-
 import arduino_scons.auto_config
 from arduino_scons.git_util import GitUtil
-from arduino_rpc import package_path, get_sketch_directory
+rpc_module = import_module(path('PROJECT_PREFIX').bytes().strip())
 
 
 def get_version_string():
@@ -37,12 +37,12 @@ Import('PYTHON_LIB')
 # # Build Arduino binaries #
 sketch_build_root = path('build/arduino').abspath()
 Export('sketch_build_root')
-SConscript(get_sketch_directory().joinpath('SConscript'))
+SConscript(rpc_module.get_sketch_directory().joinpath('SConscript'))
 
 Import('arduino_hex')
 Import('build_context')
 
 # # Install compiled firmwares to `firmware` directory #
-firmware_path = package_path().joinpath('firmware',
-                                        build_context.ARDUINO_BOARD)
+firmware_path = rpc_module.package_path().joinpath('firmware',
+                                                   build_context.ARDUINO_BOARD)
 package_hex = env.Install(firmware_path, arduino_hex)
