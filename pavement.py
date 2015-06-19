@@ -22,7 +22,7 @@ setup(name='wheeler.' + PROJECT_PREFIX,
       url='http://github.com/wheeler-microfluidics/%s.git' % PROJECT_PREFIX,
       license='GPLv2',
       install_requires=['arduino_scons', 'nadamq', 'path_helpers',
-                        'arduino_helpers', 'wheeler.arduino_rpc>=1.0'],
+                        'arduino_helpers', 'wheeler.base_node_rpc>=0.3'],
       packages=[PROJECT_PREFIX],
       package_data=package_files)
 
