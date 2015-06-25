@@ -7,8 +7,8 @@
 #include "ArduinoRPC.h"
 #include "Array.h"
 #include "RPCBuffer.h"
-#include "Node.h"
 #include "NodeCommandProcessor.h"
+#include "Node.h"
 #include "I2cHandler.h"
 #include "packet_handler.h"
 
