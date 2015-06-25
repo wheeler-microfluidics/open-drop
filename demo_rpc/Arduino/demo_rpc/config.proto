@@ -1,0 +1,4 @@
+message Config {
+  optional uint32 serial_number = 1;
+  optional uint32 i2c_address = 2;
+}
