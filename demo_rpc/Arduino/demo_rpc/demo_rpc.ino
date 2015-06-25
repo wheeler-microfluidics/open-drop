@@ -1,4 +1,5 @@
 #include "EEPROM.h"
+#include "SPI.h"
 #include "Wire.h"
 #include "Memory.h"
 #include "nanopb.h"
@@ -7,13 +8,10 @@
 #include "Array.h"
 #include "Node.h"
 #include "NodeCommandProcessor.h"
+#include "I2cHandler.h"
 #include "packet_handler.h"
 #include "RPCBuffer.h"
 
-
-uint8_t processing_i2c_request = false;
-uint8_t i2c_response_size_sent = false;
-FixedPacket i2c_packet;
 
 Node node_obj;
 demo_rpc::CommandProcessor<Node> command_processor(node_obj);
@@ -33,6 +31,7 @@ Handler handler(Serial, command_processor);
  * complete packets to `handler` for processing. */
 Reactor reactor(parser, Serial, handler);
 #endif  // #ifndef DISABLE_SERIAL
+base_node::I2cHandler<FixedPacket> i2c_handler;
 
 
 void setup() {
@@ -51,7 +50,8 @@ void setup() {
   packet.reset_buffer(PACKET_SIZE, &packet_buffer[0]);
   parser.reset(&packet);
 #endif  // #ifndef DISABLE_SERIAL
-  i2c_packet.reset_buffer(I2C_PACKET_SIZE, &i2c_packet_buffer[0]);
+  i2c_handler.request_packet.reset_buffer(I2C_PACKET_SIZE,
+                                          &i2c_packet_buffer[0]);
 }
 
 
@@ -62,39 +62,9 @@ void loop() {
    * process the request. */
   reactor.parse_available();
 #endif  // #ifndef DISABLE_SERIAL
-  if (processing_i2c_request) {
-    process_packet_with_processor(i2c_packet, command_processor);
-    processing_i2c_request = false;
-  }
+  i2c_handler.process_available(command_processor);
 }
 
 
-void i2c_receive_event(int byte_count) {
-  processing_i2c_request = true;
-  /* Record all bytes received on the i2c bus to a buffer.  The contents of
-   * this buffer will be forwarded to the local serial-stream. */
-  int i;
-  for (i = 0; i < byte_count; i++) {
-      i2c_packet_buffer[i] = Wire.read();
-  }
-  i2c_packet.payload_length_ = i;
-  i2c_packet.type(Packet::packet_type::DATA);
-}
-
-
-void i2c_request_event() {
-  uint8_t byte_count = (uint8_t)i2c_packet.payload_length_;
-  /* There is a response from a previously received packet, so send it to the
-   * master of the i2c bus. */
-  if (!i2c_response_size_sent) {
-    if (processing_i2c_request) {
-      Wire.write(0xFF);
-    } else {
-      Wire.write(byte_count);
-      i2c_response_size_sent = true;
-    }
-  } else {
-    Wire.write(i2c_packet.payload_buffer_, byte_count);
-    i2c_response_size_sent = false;
-  }
-}
+void i2c_receive_event(int byte_count) { i2c_handler.on_receive(byte_count); }
+void i2c_request_event() { i2c_handler.on_request(); }
