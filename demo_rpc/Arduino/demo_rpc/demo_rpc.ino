@@ -6,11 +6,11 @@
 #include "NadaMQ.h"
 #include "ArduinoRPC.h"
 #include "Array.h"
+#include "RPCBuffer.h"
 #include "Node.h"
 #include "NodeCommandProcessor.h"
 #include "I2cHandler.h"
 #include "packet_handler.h"
-#include "RPCBuffer.h"
 
 
 Node node_obj;
