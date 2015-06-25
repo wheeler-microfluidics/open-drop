@@ -17,6 +17,7 @@ PROJECT_PREFIX = path('PROJECT_PREFIX').bytes().strip()
 VERSION = version.getVersion()
 URL='http://github.com/wheeler-microfluidics/%s.git' % PROJECT_PREFIX
 PROPERTIES = OrderedDict([('name', PROJECT_PREFIX),
+                          ('manufacturer', 'Wheeler Lab'),
                           ('software_version', VERSION),
                           ('url', URL)])
 package_files = find_package_data(package=PROJECT_PREFIX, where=PROJECT_PREFIX,
