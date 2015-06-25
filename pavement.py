@@ -13,7 +13,8 @@ import version
 
 
 DEFAULT_ARDUINO_BOARDS = ['uno', 'mega2560']
-PROJECT_PREFIX = path('PROJECT_PREFIX').bytes().strip()
+PROJECT_PREFIX = [d for d in path('.').dirs()
+                  if d.joinpath('Arduino').isdir()][0].name
 VERSION = version.getVersion()
 URL='http://github.com/wheeler-microfluidics/%s.git' % PROJECT_PREFIX
 PROPERTIES = OrderedDict([('name', PROJECT_PREFIX),
