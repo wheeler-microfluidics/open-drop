@@ -3,6 +3,8 @@
 
 #include <BaseNode.h>
 #include <Array.h>
+#include "pb_validate.h"
+#include "demo_rpc_config_validate.h"
 namespace demo_rpc {
 #include "demo_rpc_config_pb.h"
 }  // namespace demo_rpc
@@ -15,11 +17,32 @@ public:
   demo_rpc::Config config_;
   demo_rpc::State state_;
 
+  MessageValidator<2> config_validator_;
+  SerialNumberValidator serial_number_validator_;
+  I2cAddressValidator i2c_address_validator_;
+
+  MessageValidator<2> state_validator_;
+  FloatValueValidator float_value_validator_;
+  IntegerValueValidator integer_value_validator_;
+
   Node() : BaseNode() {
     load_config();
+    config_validator_.register_validator(serial_number_validator_);
+    config_validator_.register_validator(i2c_address_validator_);
+    state_validator_.register_validator(float_value_validator_);
+    state_validator_.register_validator(integer_value_validator_);
   }
-  void reset_state() { state_ = State_init_default; }
   void reset_config() { config_ = Config_init_default; }
+  uint8_t update_config(UInt8Array serialized_config) {
+    demo_rpc::Config config;
+    bool ok = base_node_rpc::decode_from_array(serialized_config,
+                                               demo_rpc::Config_fields,
+                                               config);
+    if (ok) {
+      config_validator_.update(demo_rpc::Config_fields, config, config_);
+    }
+    return ok;
+  }
   void save_config() {
     UInt8Array serialized = serialize_config();
     if (serialized.data != NULL) {
@@ -28,9 +51,16 @@ public:
       update_eeprom_block(sizeof(uint16_t), serialized);
     }
   }
-  uint8_t set_state(UInt8Array serialized_state) {
-    return base_node_rpc::decode_from_array(serialized_state,
-                                            demo_rpc::State_fields, state_);
+  void reset_state() { state_ = State_init_default; }
+  uint8_t update_state(UInt8Array serialized_state) {
+    demo_rpc::State state;
+    bool ok = base_node_rpc::decode_from_array(serialized_state,
+                                               demo_rpc::State_fields,
+                                               state);
+    if (ok) {
+      state_validator_.update(demo_rpc::State_fields, state, state_);
+    }
+    return ok;
   }
   UInt8Array serialize_state() {
     return BaseNode::serialize_obj(state_, demo_rpc::State_fields);
