@@ -62,7 +62,7 @@ void loop() {
    * process the request. */
   reactor.parse_available();
 #endif  // #ifndef DISABLE_SERIAL
-  //i2c_handler.process_available(command_processor);
+  if (node_obj.i2c_packet_ready()) { node_obj.i2c_process_packet(); }
 }
 
 

@@ -9,7 +9,6 @@ namespace demo_rpc {
 #include "demo_rpc_config_pb.h"
 }  // namespace demo_rpc
 
-
 namespace i2c_buffer {
 
 
@@ -55,12 +54,8 @@ struct I2cReceiver {
 
   UInt8Array packet_read() {
     UInt8Array output;
-    output.data = NULL;
-    output.length = 0;
-    if (packet_ready()) {
-      output.data = parser_.packet_->payload_buffer_;
-      output.length = parser_.packet_->payload_length_;
-    }
+    output.data = parser_.packet_->payload_buffer_;
+    output.length = parser_.packet_->payload_length_;
     return output;
   }
 };
@@ -168,7 +163,7 @@ public:
   uint32_t i2c_address() { return config_.i2c_address; }
   uint32_t sizeof_parser() { return sizeof(PacketParser<FixedPacket>); }
 
-  void i2c_parser_reset() { i2c_receiver_.reset(); }
+  void i2c_packet_reset() { i2c_receiver_.reset(); }
   uint8_t i2c_packet_ready() { return i2c_receiver_.packet_ready(); }
   uint8_t i2c_packet_error() { return i2c_receiver_.packet_error(); }
   UInt8Array i2c_packet_read() {
@@ -180,6 +175,109 @@ public:
   uint8_t i2c_receiver_source_address() { return i2c_receiver_.source_addr_; }
   void set_i2c_receiver_source_address(uint8_t addr) {
     i2c_receiver_.source_addr_ = addr;
+  }
+
+  UInt8Array i2c_process_packet() {
+    UInt8Array result;
+    if (i2c_packet_ready()) {
+      demo_rpc::CommandProcessor<Node> command_processor(*this);
+
+      result = process_packet_with_processor(*i2c_receiver_.parser_.packet_,
+                                             command_processor);
+      if (result.data == NULL) {
+        result.data = output_buffer;
+        result.length = 0;
+      }
+      i2c_write_packet(i2c_receiver_.source_addr_, result);
+      // Reset packet state since request may have overwritten packet buffer.
+      i2c_packet_reset();
+    } else {
+      result.data = NULL;
+      result.length = 0;
+    }
+    return result;
+  }
+
+  UInt8Array i2c_request(uint8_t address, UInt8Array data) {
+    i2c_packet_reset();
+    i2c_write_packet(address, data);
+    uint32_t start_time = millis();
+    while (5000UL > (millis() - start_time) && !i2c_packet_ready()) {}
+    UInt8Array result = i2c_packet_read();
+    // Reset packet state to prepare for incoming requests on I2C interface.
+    i2c_packet_reset();
+    return result;
+  }
+
+  uint16_t packet_crc(UInt8Array data) {
+    FixedPacket to_send;
+    to_send.type(Packet::packet_type::DATA);
+    to_send.reset_buffer(data.length, data.data);
+    to_send.payload_length_ = data.length;
+
+    /* Set the CRC checksum of the packet based on the contents of the payload.
+    * */
+    to_send.compute_crc();
+    return to_send.crc_;
+  }
+
+  void i2c_write_packet(uint8_t address, UInt8Array data) {
+    FixedPacket to_send;
+    to_send.type(Packet::packet_type::DATA);
+    to_send.reset_buffer(data.length, data.data);
+    to_send.payload_length_ = data.length;
+
+    /* Set the CRC checksum of the packet based on the contents of the payload.
+    * */
+    to_send.compute_crc();
+
+    stream_byte_type startflag[] = "|||";
+    const uint8_t source_addr = config_.i2c_address;
+    uint8_t type_ = static_cast<uint8_t>(to_send.type());
+
+    Wire.beginTransmission(address);
+    serialize_any(Wire, source_addr);
+    Wire.write(startflag, 3);
+    serialize_any(Wire, to_send.iuid_);
+    serialize_any(Wire, type_);
+    serialize_any(Wire, static_cast<uint16_t>(to_send.payload_length_));
+    Wire.endTransmission();
+
+    while (to_send.payload_length_ > 0) {
+      uint16_t length = ((to_send.payload_length_ > TWI_BUFFER_LENGTH - 1)
+                         ? TWI_BUFFER_LENGTH - 1 : to_send.payload_length_);
+
+      Wire.beginTransmission(address);
+      serialize_any(Wire, source_addr);
+      Wire.write((stream_byte_type*)to_send.payload_buffer_,
+                  length);
+      Wire.endTransmission();
+
+      to_send.payload_buffer_ += length;
+      to_send.payload_length_ -= length;
+    }
+
+    Wire.beginTransmission(address);
+    serialize_any(Wire, source_addr);
+    serialize_any(Wire, to_send.crc_);
+    Wire.endTransmission();
+  }
+
+  UInt8Array test_parser(UInt8Array data) {
+    UInt8Array output;
+    output.data = output_buffer;
+    output.length = sizeof(output_buffer);
+    parser_t parser;
+    FixedPacket packet;
+    packet.reset_buffer(output.length, &output.data[0]);
+    parser.reset(&packet);
+    for (int i = 0; i < data.length; i++) {
+      parser.parse_byte(&data.data[i]);
+    }
+    output.data[0] = parser.message_completed_;
+    output.data[1] = parser.parse_error_;
+    output.length = 2;
+    return output;
   }
 };
 
