@@ -67,8 +67,6 @@ public:
   i2c_buffer::I2cReceiver<parser_t> i2c_receiver_;
 
   Node() : BaseNode(), i2c_receiver_(i2c_parser_) {
-    Wire.onReceive(i2c_receive_event);
-    load_config();
     config_validator_.register_validator(serial_number_validator_);
     config_validator_.register_validator(i2c_address_validator_);
     state_validator_.register_validator(float_value_validator_);
@@ -76,6 +74,11 @@ public:
     state_validator_.register_validator(integer_value_validator_);
     i2c_packet_.reset_buffer(I2C_PACKET_SIZE, &i2c_packet_buffer[0]);
     i2c_parser_.reset(&i2c_packet_);
+    /* Configuration must be loaded after `i2c_address_validator_` has been
+     * registered, since i2c address validator sets the address of the `Wire`
+     * interface. */
+    load_config();
+    Wire.onReceive(i2c_receive_event);
   }
   void reset_config() { config_ = Config_init_default; }
   uint8_t update_config(UInt8Array serialized_config) {
@@ -113,6 +116,13 @@ public:
   UInt8Array serialize_config() {
     return BaseNode::serialize_obj(config_, demo_rpc::Config_fields);
   }
+  void validate_config() {
+    demo_rpc::Config &config = *((demo_rpc::Config *)output_buffer);
+    config = Config_init_default;
+    /* Validate the active configuration structure (i.e., trigger the
+     * validation callbacks). */
+    config_validator_.update(demo_rpc::Config_fields, config_, config);
+  }
   void load_config() {
     if (!decode_obj_from_eeprom(0, config_, demo_rpc::Config_fields)) {
       /* Configuration could not be loaded from EEPROM; reset config. */
@@ -121,15 +131,20 @@ public:
     } else {
       RETURN_CODE_ = 0;
     }
-    if (config_.i2c_address > 0 && config_.i2c_address > 0) {
-      Wire.begin(static_cast<uint8_t>(config_.i2c_address));
-    }
+    validate_config();
   }
   uint8_t return_code() { return RETURN_CODE_; }
   void set_serial_number(uint32_t value) { config_.serial_number = value; }
   uint32_t serial_number() { return config_.serial_number; }
-  //void set_i2c_address(uint8_t value) { config_.i2c_address = value; }
-  //uint32_t i2c_address() { return config_.i2c_address; }
+  void set_i2c_address(uint8_t value) {
+    // Validator expects `uint32_t` by reference.
+    uint32_t address = value;
+    /* Validate address and update the active `Wire` configuration if the
+     * address is valid. */
+    i2c_address_validator_(address, config_.i2c_address);
+    config_.i2c_address = address;
+  }
+  uint32_t i2c_address() { return config_.i2c_address; }
   uint32_t sizeof_parser() { return sizeof(PacketParser<FixedPacket>); }
 
   //uint16_t i2c_stream_available() { return i2c_stream_.available(); }
