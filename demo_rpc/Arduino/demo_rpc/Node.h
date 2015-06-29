@@ -79,7 +79,7 @@ public:
   }
   void reset_config() { config_ = Config_init_default; }
   uint8_t update_config(UInt8Array serialized_config) {
-    demo_rpc::Config config;
+    demo_rpc::Config config = Config_init_default;
     bool ok = base_node_rpc::decode_from_array(serialized_config,
                                                demo_rpc::Config_fields,
                                                config);
