@@ -10,6 +10,43 @@ namespace demo_rpc {
 }  // namespace demo_rpc
 
 
+namespace i2c_buffer {
+
+
+template <typename Parser>
+struct I2cReceiver {
+  Parser &parser_;
+
+  I2cReceiver(Parser &parser) : parser_(parser) {}
+
+  void operator()(int16_t byte_count) {
+    for (int i = 0; i < byte_count; i++) {
+      uint8_t value = Wire.read();
+      parser_.parse_byte(&value);
+    }
+  }
+
+  bool packet_ready() { return parser_.message_completed_; }
+  uint8_t packet_error() {
+    if (parser_.parse_error_) { return 'e'; }
+    return 0;
+  }
+
+  UInt8Array packet_read() {
+    UInt8Array output;
+    output.data = NULL;
+    output.length = 0;
+    if (packet_ready()) {
+      output.data = parser_.packet_->payload_buffer_;
+      output.length = parser_.packet_->payload_length_;
+    }
+    return output;
+  }
+};
+
+}  // namespace i2c_handler
+
+
 class Node : public BaseNode {
 public:
   using BaseNode::output_buffer;
@@ -24,13 +61,21 @@ public:
   MessageValidator<2> state_validator_;
   FloatValueValidator float_value_validator_;
   IntegerValueValidator integer_value_validator_;
+  typedef PacketParser<FixedPacket> parser_t;
+  parser_t i2c_parser_;
+  FixedPacket i2c_packet_;
+  i2c_buffer::I2cReceiver<parser_t> i2c_receiver_;
 
-  Node() : BaseNode() {
+  Node() : BaseNode(), i2c_receiver_(i2c_parser_) {
+    Wire.onReceive(i2c_receive_event);
     load_config();
     config_validator_.register_validator(serial_number_validator_);
     config_validator_.register_validator(i2c_address_validator_);
     state_validator_.register_validator(float_value_validator_);
     state_validator_.register_validator(integer_value_validator_);
+    state_validator_.register_validator(integer_value_validator_);
+    i2c_packet_.reset_buffer(I2C_PACKET_SIZE, &i2c_packet_buffer[0]);
+    i2c_parser_.reset(&i2c_packet_);
   }
   void reset_config() { config_ = Config_init_default; }
   uint8_t update_config(UInt8Array serialized_config) {
@@ -83,9 +128,27 @@ public:
   uint8_t return_code() { return RETURN_CODE_; }
   void set_serial_number(uint32_t value) { config_.serial_number = value; }
   uint32_t serial_number() { return config_.serial_number; }
-  void set_i2c_address(uint8_t value) { config_.i2c_address = value; }
-  uint32_t i2c_address() { return config_.i2c_address; }
-};
+  //void set_i2c_address(uint8_t value) { config_.i2c_address = value; }
+  //uint32_t i2c_address() { return config_.i2c_address; }
+  uint32_t sizeof_parser() { return sizeof(PacketParser<FixedPacket>); }
 
+  //uint16_t i2c_stream_available() { return i2c_stream_.available(); }
+  //void i2c_stream_reset() { i2c_stream_.reset(); }
+  //int8_t i2c_stream_read_byte() { return i2c_stream_.read(); }
+  //UInt8Array i2c_stream_read() {
+    //UInt8Array output = i2c_stream_.data_;
+    //i2c_stream_.reset();
+    //return output;
+  //}
+  void i2c_parser_reset() { i2c_parser_.reset(); }
+  uint8_t i2c_packet_ready() { return i2c_receiver_.packet_ready(); }
+  uint8_t i2c_packet_error() { return i2c_receiver_.packet_error(); }
+  UInt8Array i2c_packet_read() {
+    UInt8Array output = i2c_receiver_.packet_read();
+    output.length = (output.length > max_payload_size() ? max_payload_size()
+                     : output.length);
+    return output;
+  }
+};
 
 #endif  // #ifndef ___NODE__H___
