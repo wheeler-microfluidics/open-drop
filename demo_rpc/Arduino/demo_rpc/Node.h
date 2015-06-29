@@ -16,14 +16,35 @@ namespace i2c_buffer {
 template <typename Parser>
 struct I2cReceiver {
   Parser &parser_;
+  uint8_t source_addr_;
 
-  I2cReceiver(Parser &parser) : parser_(parser) {}
+  I2cReceiver(Parser &parser) : parser_(parser) { reset(); }
 
   void operator()(int16_t byte_count) {
+    // Interpret first byte of each I2C message as source address of message.
+    uint8_t source_addr = Wire.read();
+    byte_count -= 1;
+    /* Received message from a new source address.
+     *
+     * TODO
+     * ====
+     *
+     * Strategies for dealing with this situation:
+     *  1. Discard messages that do not match current source address until
+     *     receiver is reset.
+     *  2. Reset parser and start parsing data from new source.
+     *  3. Maintain separate parser for each source address? */
+    if (source_addr_ == 0) { source_addr_ = source_addr; }
+
     for (int i = 0; i < byte_count; i++) {
       uint8_t value = Wire.read();
-      parser_.parse_byte(&value);
+      if (source_addr == source_addr_) { parser_.parse_byte(&value); }
     }
+  }
+
+  void reset() {
+    parser_.reset();
+    source_addr_ = 0;
   }
 
   bool packet_ready() { return parser_.message_completed_; }
@@ -147,15 +168,7 @@ public:
   uint32_t i2c_address() { return config_.i2c_address; }
   uint32_t sizeof_parser() { return sizeof(PacketParser<FixedPacket>); }
 
-  //uint16_t i2c_stream_available() { return i2c_stream_.available(); }
-  //void i2c_stream_reset() { i2c_stream_.reset(); }
-  //int8_t i2c_stream_read_byte() { return i2c_stream_.read(); }
-  //UInt8Array i2c_stream_read() {
-    //UInt8Array output = i2c_stream_.data_;
-    //i2c_stream_.reset();
-    //return output;
-  //}
-  void i2c_parser_reset() { i2c_parser_.reset(); }
+  void i2c_parser_reset() { i2c_receiver_.reset(); }
   uint8_t i2c_packet_ready() { return i2c_receiver_.packet_ready(); }
   uint8_t i2c_packet_error() { return i2c_receiver_.packet_error(); }
   UInt8Array i2c_packet_read() {
@@ -163,6 +176,10 @@ public:
     output.length = (output.length > max_payload_size() ? max_payload_size()
                      : output.length);
     return output;
+  }
+  uint8_t i2c_receiver_source_address() { return i2c_receiver_.source_addr_; }
+  void set_i2c_receiver_source_address(uint8_t addr) {
+    i2c_receiver_.source_addr_ = addr;
   }
 };
 
