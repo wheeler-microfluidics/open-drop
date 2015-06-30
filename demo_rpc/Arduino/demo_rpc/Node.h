@@ -7,6 +7,7 @@
 #include <BaseNodePb.h>
 #include <Array.h>
 #include <I2cHandler.h>
+#include <SerialHandler.h>
 #include <pb_validate.h>
 #include "demo_rpc_config_validate.h"
 namespace demo_rpc {
@@ -18,7 +19,15 @@ class Node :
   public BaseNodePb {
 public:
   typedef PacketParser<FixedPacket> parser_t;
-  typedef base_node_rpc::I2cHandler<I2C_PACKET_SIZE> i2c_handler_t;
+  typedef base_node_rpc::I2cReceiver<parser_t> i2c_receiver_t;
+  typedef base_node_rpc::I2cHandler<i2c_receiver_t, I2C_PACKET_SIZE>
+    i2c_handler_t;
+#ifndef DISABLE_SERIAL
+  typedef base_node_rpc::SerialReceiver<parser_t> serial_receiver_t;
+  typedef base_node_rpc::Handler<serial_receiver_t, PACKET_SIZE>
+    serial_handler_t;
+#endif  // #ifndef DISABLE_SERIAL
+
   uint8_t output_buffer[128];
   Config config_;
   State state_;
@@ -31,6 +40,9 @@ public:
   FloatValueValidator float_value_validator_;
   IntegerValueValidator integer_value_validator_;
   i2c_handler_t i2c_handler_;
+#ifndef DISABLE_SERIAL
+  serial_handler_t serial_handler_;
+#endif  // #ifndef DISABLE_SERIAL
 
   Node() : BaseNode() {
     config_validator_.register_validator(serial_number_validator_);
