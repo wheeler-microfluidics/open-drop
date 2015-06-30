@@ -38,6 +38,6 @@ options(
                author_email='christian@fobel.net',
                url=URL,
                license='GPLv2',
-               install_requires=['wheeler.base_node_rpc>=0.5'],
+               install_requires=['wheeler.base_node_rpc>=0.6.post2'],
                packages=[PROJECT_PREFIX],
                package_data=package_files))
