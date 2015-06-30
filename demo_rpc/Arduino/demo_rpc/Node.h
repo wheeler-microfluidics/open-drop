@@ -45,6 +45,13 @@ public:
      * registered, since i2c address validator sets the address of the `Wire`
      * interface. */
     load_config();
+  }
+  void begin() {
+    // Set i2c clock-rate to 400kHz.
+    TWBR = 12;
+#if !defined(DISABLE_SERIAL)
+    Serial.begin(115200);
+#endif  // #ifndef DISABLE_SERIAL
     Wire.onReceive(i2c_receive_event);
   }
   virtual UInt8Array get_buffer() {
