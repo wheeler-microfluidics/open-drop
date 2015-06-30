@@ -29,6 +29,7 @@ package_files = find_package_data(package=PROJECT_PREFIX, where=PROJECT_PREFIX,
 options(
     rpc_module=rpc_module,
     PROPERTIES=PROPERTIES,
+    base_classes=['BaseNodeEeprom', 'BaseNodeI2c'],
     DEFAULT_ARDUINO_BOARDS=DEFAULT_ARDUINO_BOARDS,
     setup=dict(name='wheeler.' + PROJECT_PREFIX,
                version=VERSION,

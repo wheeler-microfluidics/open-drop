@@ -31,7 +31,7 @@ Handler handler(Serial, command_processor);
  * complete packets to `handler` for processing. */
 Reactor reactor(parser, Serial, handler);
 #endif  // #ifndef DISABLE_SERIAL
-base_node::I2cHandler<FixedPacket> i2c_handler;
+//base_node::I2cHandler<FixedPacket> i2c_handler;
 
 
 void setup() {
@@ -40,8 +40,8 @@ void setup() {
   Wire.begin();
 #else
   /* Join I2C bus as slave. */
-  Wire.onReceive(i2c_receive_event);
-  Wire.onRequest(i2c_request_event);
+  //Wire.onReceive(i2c_receive_event);
+  //Wire.onRequest(i2c_request_event);
 #endif  // #ifdef __AVR_ATmega328__
   // Set i2c clock-rate to 400kHz.
   TWBR = 12;
@@ -50,8 +50,8 @@ void setup() {
   packet.reset_buffer(PACKET_SIZE, &packet_buffer[0]);
   parser.reset(&packet);
 #endif  // #ifndef DISABLE_SERIAL
-  i2c_handler.request_packet.reset_buffer(I2C_PACKET_SIZE,
-                                          &i2c_packet_buffer[0]);
+  //i2c_handler.request_packet.reset_buffer(I2C_PACKET_SIZE,
+                                          //&i2c_packet_buffer[0]);
 }
 
 
@@ -62,9 +62,12 @@ void loop() {
    * process the request. */
   reactor.parse_available();
 #endif  // #ifndef DISABLE_SERIAL
-  i2c_handler.process_available(command_processor);
+  if (node_obj.i2c_packet_ready()) { node_obj.i2c_process_packet(); }
 }
 
 
-void i2c_receive_event(int byte_count) { i2c_handler.on_receive(byte_count); }
-void i2c_request_event() { i2c_handler.on_request(); }
+//void i2c_receive_event(int byte_count) { i2c_handler.on_receive(byte_count); }
+//void i2c_request_event() { i2c_handler.on_request(); }
+//void i2c_receive_event(int byte_count) { node_obj.i2c_stream_.on_receive(byte_count); }
+void i2c_receive_event(int byte_count) { node_obj.i2c_receiver_(byte_count); }
+
