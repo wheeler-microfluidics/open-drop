@@ -9,16 +9,15 @@
 #include "RPCBuffer.h"
 #include "NodeCommandProcessor.h"
 #include "Node.h"
-#include "I2cHandler.h"
 #include "packet_handler.h"
 
 
-Node node_obj;
-demo_rpc::CommandProcessor<Node> command_processor(node_obj);
+demo_rpc::Node node_obj;
+demo_rpc::CommandProcessor<demo_rpc::Node> command_processor(node_obj);
 
 #ifndef DISABLE_SERIAL
 typedef CommandPacketHandler
-  <Stream, demo_rpc::CommandProcessor<Node> > Handler;
+  <Stream, demo_rpc::CommandProcessor<demo_rpc::Node> > Handler;
 typedef PacketReactor<PacketParser<FixedPacket>, Stream, Handler> Reactor;
 
 FixedPacket packet;
@@ -33,12 +32,16 @@ Reactor reactor(parser, Serial, handler);
 #endif  // #ifndef DISABLE_SERIAL
 
 
+void i2c_receive_event(int byte_count) { node_obj.i2c_handler_.receiver()(byte_count); }
+
+
 void setup() {
   node_obj.begin();
 #if !defined(DISABLE_SERIAL)
   packet.reset_buffer(PACKET_SIZE, &packet_buffer[0]);
   parser.reset(&packet);
 #endif  // #ifndef DISABLE_SERIAL
+  Wire.onReceive(i2c_receive_event);
 }
 
 
@@ -49,8 +52,7 @@ void loop() {
    * process the request. */
   reactor.parse_available();
 #endif  // #ifndef DISABLE_SERIAL
-  if (node_obj.i2c_packet_ready()) { node_obj.i2c_process_packet(); }
+  if (node_obj.i2c_handler_.packet_ready()) {
+    node_obj.i2c_handler_.process_packet(command_processor);
+  }
 }
-
-
-void i2c_receive_event(int byte_count) { node_obj.i2c_receiver_(byte_count); }

@@ -3,6 +3,14 @@ from collections import OrderedDict
 import nadamq
 import base_node_rpc
 from path_helpers import path
+try:
+    from .node import Proxy, I2cProxy
+except (ImportError, TypeError):
+    pass
+try:
+    from .config import Config, State
+except (ImportError, TypeError):
+    pass
 
 
 def package_path():
