@@ -1,7 +1,10 @@
 #ifndef ___NODE__H___
 #define ___NODE__H___
 
-#include <BaseNode.h>
+#include <BaseNodeRpc.h>
+#include <BaseNodeEeprom.h>
+#include <BaseNodeI2c.h>
+#include <BaseNodePb.h>
 #include <Array.h>
 #include "pb_validate.h"
 #include "demo_rpc_config_validate.h"
@@ -9,64 +12,12 @@ namespace demo_rpc {
 #include "demo_rpc_config_pb.h"
 }  // namespace demo_rpc
 
-namespace i2c_buffer {
 
-
-template <typename Parser>
-struct I2cReceiver {
-  Parser &parser_;
-  uint8_t source_addr_;
-
-  I2cReceiver(Parser &parser) : parser_(parser) { reset(); }
-
-  void operator()(int16_t byte_count) {
-    // Interpret first byte of each I2C message as source address of message.
-    uint8_t source_addr = Wire.read();
-    byte_count -= 1;
-    /* Received message from a new source address.
-     *
-     * TODO
-     * ====
-     *
-     * Strategies for dealing with this situation:
-     *  1. Discard messages that do not match current source address until
-     *     receiver is reset.
-     *  2. Reset parser and start parsing data from new source.
-     *  3. Maintain separate parser for each source address? */
-    if (source_addr_ == 0) { source_addr_ = source_addr; }
-
-    for (int i = 0; i < byte_count; i++) {
-      uint8_t value = Wire.read();
-      if (source_addr == source_addr_) { parser_.parse_byte(&value); }
-    }
-  }
-
-  void reset() {
-    parser_.reset();
-    source_addr_ = 0;
-  }
-
-  bool packet_ready() { return parser_.message_completed_; }
-  uint8_t packet_error() {
-    if (parser_.parse_error_) { return 'e'; }
-    return 0;
-  }
-
-  UInt8Array packet_read() {
-    UInt8Array output;
-    output.data = parser_.packet_->payload_buffer_;
-    output.length = parser_.packet_->payload_length_;
-    return output;
-  }
-};
-
-}  // namespace i2c_handler
-
-
-class Node : public BaseNode {
+class Node :
+  public BaseNode, public BaseNodeEeprom, public BaseNodeI2c,
+  public BaseNodePb {
 public:
-  using BaseNode::output_buffer;
-  using BaseNode::RETURN_CODE_;
+  uint8_t output_buffer[128];
   demo_rpc::Config config_;
   demo_rpc::State state_;
 
@@ -95,6 +46,12 @@ public:
      * interface. */
     load_config();
     Wire.onReceive(i2c_receive_event);
+  }
+  virtual UInt8Array get_buffer() {
+    UInt8Array output;
+    output.data = output_buffer;
+    output.length = sizeof(output_buffer);
+    return output;
   }
   void reset_config() { config_ = Config_init_default; }
   uint8_t update_config(UInt8Array serialized_config) {
@@ -127,13 +84,14 @@ public:
     return ok;
   }
   UInt8Array serialize_state() {
-    return BaseNode::serialize_obj(state_, demo_rpc::State_fields);
+    return serialize_obj(state_, demo_rpc::State_fields);
   }
   UInt8Array serialize_config() {
-    return BaseNode::serialize_obj(config_, demo_rpc::Config_fields);
+    return serialize_obj(config_, demo_rpc::Config_fields);
   }
   void validate_config() {
-    demo_rpc::Config &config = *((demo_rpc::Config *)output_buffer);
+    UInt8Array output = get_buffer();
+    demo_rpc::Config &config = *((demo_rpc::Config *)output.data);
     config = Config_init_default;
     /* Validate the active configuration structure (i.e., trigger the
      * validation callbacks). */
@@ -143,13 +101,9 @@ public:
     if (!decode_obj_from_eeprom(0, config_, demo_rpc::Config_fields)) {
       /* Configuration could not be loaded from EEPROM; reset config. */
       reset_config();
-      RETURN_CODE_ = 1;
-    } else {
-      RETURN_CODE_ = 0;
     }
     validate_config();
   }
-  uint8_t return_code() { return RETURN_CODE_; }
   void set_serial_number(uint32_t value) { config_.serial_number = value; }
   uint32_t serial_number() { return config_.serial_number; }
   void set_i2c_address(uint8_t value) {
@@ -160,7 +114,6 @@ public:
     i2c_address_validator_(address, config_.i2c_address);
     config_.i2c_address = address;
   }
-  uint32_t i2c_address() { return config_.i2c_address; }
   uint32_t sizeof_parser() { return sizeof(PacketParser<FixedPacket>); }
 
   void i2c_packet_reset() { i2c_receiver_.reset(); }
@@ -178,16 +131,13 @@ public:
   }
 
   UInt8Array i2c_process_packet() {
-    UInt8Array result;
+    UInt8Array result = get_buffer();
     if (i2c_packet_ready()) {
       demo_rpc::CommandProcessor<Node> command_processor(*this);
 
       result = process_packet_with_processor(*i2c_receiver_.parser_.packet_,
                                              command_processor);
-      if (result.data == NULL) {
-        result.data = output_buffer;
-        result.length = 0;
-      }
+      if (result.data == NULL) { result.length = 0; }
       i2c_write_packet(i2c_receiver_.source_addr_, result);
       // Reset packet state since request may have overwritten packet buffer.
       i2c_packet_reset();
@@ -264,9 +214,7 @@ public:
   }
 
   UInt8Array test_parser(UInt8Array data) {
-    UInt8Array output;
-    output.data = output_buffer;
-    output.length = sizeof(output_buffer);
+    UInt8Array output = get_buffer();
     parser_t parser;
     FixedPacket packet;
     packet.reset_buffer(output.length, &output.data[0]);
