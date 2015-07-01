@@ -2,6 +2,7 @@
 #define ___NODE__H___
 
 #include <BaseNodeRpc.h>
+#include <BaseNodeConfig.h>
 #include <BaseNodeEeprom.h>
 #include <BaseNodeI2c.h>
 #include <BaseNodePb.h>
@@ -14,9 +15,23 @@ namespace demo_rpc {
 #include "demo_rpc_config_pb.h"
 
 
+class NodeConfig : public BaseNodeConfig<Config, MessageValidator<2> > {
+public:
+  typedef BaseNodeConfig<Config, MessageValidator<2> > base_type;
+
+  NodeConfig() { reset_config(); }
+
+  const pb_field_t *get_config_fields() { return Config_fields; }
+  Config get_config_default() {
+    Config result = Config_init_default;
+    return result;
+  }
+};
+
+
 class Node :
   public BaseNode, public BaseNodeEeprom, public BaseNodeI2c,
-  public BaseNodePb {
+  public NodeConfig {
 public:
   typedef PacketParser<FixedPacket> parser_t;
   typedef base_node_rpc::I2cReceiver<parser_t> i2c_receiver_t;
@@ -29,16 +44,15 @@ public:
 #endif  // #ifndef DISABLE_SERIAL
 
   uint8_t output_buffer[128];
-  Config config_;
   State state_;
 
-  MessageValidator<2> config_validator_;
   SerialNumberValidator serial_number_validator_;
   I2cAddressValidator i2c_address_validator_;
 
   MessageValidator<2> state_validator_;
   FloatValueValidator float_value_validator_;
   IntegerValueValidator integer_value_validator_;
+
   i2c_handler_t i2c_handler_;
 #ifndef DISABLE_SERIAL
   serial_handler_t serial_handler_;
@@ -74,25 +88,6 @@ public:
     output.length = sizeof(output_buffer);
     return output;
   }
-  void reset_config() { config_ = Config_init_default; }
-  uint8_t update_config(UInt8Array serialized_config) {
-    Config config = Config_init_default;
-    bool ok = base_node_rpc::decode_from_array(serialized_config,
-                                               Config_fields,
-                                               config);
-    if (ok) {
-      config_validator_.update(Config_fields, config, config_);
-    }
-    return ok;
-  }
-  void save_config() {
-    UInt8Array serialized = serialize_config();
-    if (serialized.data != NULL) {
-      eeprom_update_block((void*)&serialized.length, (void*)0,
-                          sizeof(uint16_t));
-      update_eeprom_block(sizeof(uint16_t), serialized);
-    }
-  }
   void reset_state() { state_ = State_init_default; }
   uint8_t update_state(UInt8Array serialized_state) {
     State state;
@@ -105,24 +100,6 @@ public:
   }
   UInt8Array serialize_state() {
     return serialize_obj(state_, State_fields);
-  }
-  UInt8Array serialize_config() {
-    return serialize_obj(config_, Config_fields);
-  }
-  void validate_config() {
-    UInt8Array output = get_buffer();
-    Config &config = *((Config *)output.data);
-    config = Config_init_default;
-    /* Validate the active configuration structure (i.e., trigger the
-     * validation callbacks). */
-    config_validator_.update(Config_fields, config_, config);
-  }
-  void load_config() {
-    if (!decode_obj_from_eeprom(0, config_, Config_fields)) {
-      /* Configuration could not be loaded from EEPROM; reset config. */
-      reset_config();
-    }
-    validate_config();
   }
   void set_serial_number(uint32_t value) { config_.serial_number = value; }
   uint32_t serial_number() { return config_.serial_number; }
