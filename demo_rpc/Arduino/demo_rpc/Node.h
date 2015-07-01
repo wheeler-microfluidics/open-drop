@@ -1,8 +1,13 @@
 #ifndef ___NODE__H___
 #define ___NODE__H___
 
+#include <Arduino.h>
+#include <NadaMQ.h>
 #include <BaseNodeRpc.h>
-#include <BaseNodeFixedBuffer.h>
+#include <BaseNodeEeprom.h>
+#include <BaseNodeI2c.h>
+#include <BaseNodeConfig.h>
+#include <BaseNodeState.h>
 #include <BaseNodeSerialHandler.h>
 #include <BaseNodeI2cHandler.h>
 #include <Array.h>
@@ -19,93 +24,54 @@ const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
                            - sizeof(uint16_t)  // UUID
                            - sizeof(uint16_t));  // Payload length
 
+typedef nanopb::EepromMessage<Config, NodeConfigValidator> config_t;
+typedef nanopb::Message<State, NodeStateValidator> state_t;
 
 class Node :
   public BaseNode,
+  public BaseNodeEeprom,
+  public BaseNodeI2c,
+  public BaseNodeConfig<config_t>,
+  public BaseNodeState<state_t>,
 #ifndef DISABLE_SERIAL
   public BaseNodeSerialHandler,
 #endif  // #ifndef DISABLE_SERIAL
-  public BaseNodeI2cHandler, public BaseNodeFixedBuffer<128> {
+  public BaseNodeI2cHandler {
 public:
   typedef PacketParser<FixedPacket> parser_t;
 
-  nanopb::EepromMessage<Config, NodeConfigValidator> config_;
-  nanopb::Message<State, NodeStateValidator> state_;
+  uint8_t buffer_[128];
 
-  Node() : BaseNode(), config_(Config_fields), state_(State_fields) {}
-  UInt8Array get_buffer() { return buffer(); }
+  Node() :
+    BaseNode(), BaseNodeConfig(Config_fields), BaseNodeState(State_fields) {}
 
-  void begin() {
-    config_.set_buffer(get_buffer());
-    state_.set_buffer(get_buffer());
-    config_.load();
-    // Start Serial after loading config to set baud rate.
-#if !defined(DISABLE_SERIAL)
-    Serial.begin(config_._.baud_rate);
-#endif  // #ifndef DISABLE_SERIAL
-    // Set i2c clock-rate to 400kHz.
-    TWBR = 12;
-  }
+  UInt8Array get_buffer() { return UInt8Array(sizeof(buffer_), buffer_); }
+  /* This is a required method to provide a temporary buffer to the
+   * `BaseNode...` classes. */
 
-  uint32_t max_payload_size() { return PACKET_SIZE - FRAME_SIZE; }
+  void begin();
+  uint16_t packet_crc(UInt8Array data);
+  UInt8Array test_parser(UInt8Array data);
 
-  void load_config() { config_.load(0); }
-  void save_config() { config_.save(0); }
-  void reset_config() { config_.reset(); }
-  UInt8Array serialize_config() { return config_.serialize(); }
-  uint8_t update_config(UInt8Array serialized) {
-    return config_.update(serialized);
-  }
-
-  void reset_state() { state_.reset(); }
-  UInt8Array serialize_state() { return state_.serialize(); }
-  uint8_t update_state(UInt8Array serialized) {
-    return state_.update(serialized);
-  }
-
+  void set_i2c_address(uint8_t value);
   void set_serial_number(uint32_t value) { config_._.serial_number = value; }
   uint32_t serial_number() { return config_._.serial_number; }
-  void set_i2c_address(uint8_t value) {
-    // Validator expects `uint32_t` by reference.
-    uint32_t address = value;
-    /* Validate address and update the active `Wire` configuration if the
-     * address is valid. */
-    config_.validator_.i2c_address_(address, config_._.i2c_address);
-    config_._.i2c_address = address;
-  }
-  uint16_t packet_crc(UInt8Array data) {
-    FixedPacket to_send;
-    to_send.type(Packet::packet_type::DATA);
-    to_send.reset_buffer(data.length, data.data);
-    to_send.payload_length_ = data.length;
 
-    /* Set the CRC checksum of the packet based on the contents of the payload.
-    * */
-    to_send.compute_crc();
-    return to_send.crc_;
-  }
-
-  UInt8Array test_parser(UInt8Array data) {
-    UInt8Array output = get_buffer();
-    parser_t parser;
-    FixedPacket packet;
-    packet.reset_buffer(output.length, &output.data[0]);
-    parser.reset(&packet);
-    for (int i = 0; i < data.length; i++) {
-      parser.parse_byte(&data.data[i]);
-    }
-    output.data[0] = parser.message_completed_;
-    output.data[1] = parser.parse_error_;
-    output.length = 2;
-    return output;
-  }
-
+  uint32_t max_payload_size() { return PACKET_SIZE - FRAME_SIZE; }
   uint32_t sizeof_node() { return sizeof(Node); }
-  uint32_t sizeof_config() { return sizeof(Config); }
-  uint32_t sizeof_state() { return sizeof(State); }
+  uint32_t sizeof_config() { return sizeof(BaseNodeConfig<config_t>); }
+  uint32_t sizeof_state() { return sizeof(BaseNodeState<state_t>); }
   uint32_t sizeof_parser() { return sizeof(parser_t); }
   uint32_t sizeof_packet_struct() { return sizeof(FixedPacket); }
   uint32_t sizeof_packet() { return PACKET_SIZE; }
+#ifndef DISABLE_SERIAL
+  uint32_t sizeof_serial_handler() {
+    return sizeof(BaseNodeSerialHandler::handler_type);
+  }
+#endif  // #ifndef DISABLE_SERIAL
+  uint32_t sizeof_i2c_handler() {
+    return sizeof(BaseNodeI2cHandler::handler_type);
+  }
 };
 
 }  // namespace demo_rpc
