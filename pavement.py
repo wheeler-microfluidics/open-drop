@@ -30,7 +30,10 @@ options(
     rpc_module=rpc_module,
     PROPERTIES=PROPERTIES,
     base_classes=['BaseNodeEeprom', 'BaseNodeI2c'],
-    rpc_class='demo_rpc::Node',
+    rpc_classes=[
+                 #'demo_rpc::NodeConfig',
+                 #'demo_rpc::NodeState',
+                 'demo_rpc::Node'],
     DEFAULT_ARDUINO_BOARDS=DEFAULT_ARDUINO_BOARDS,
     setup=dict(name='wheeler.' + PROJECT_PREFIX,
                version=VERSION,
