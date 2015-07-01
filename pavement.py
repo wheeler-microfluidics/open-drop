@@ -29,11 +29,8 @@ package_files = find_package_data(package=PROJECT_PREFIX, where=PROJECT_PREFIX,
 options(
     rpc_module=rpc_module,
     PROPERTIES=PROPERTIES,
-    base_classes=['BaseNodeEeprom', 'BaseNodeI2c'],
-    rpc_classes=[
-                 #'demo_rpc::NodeConfig',
-                 #'demo_rpc::NodeState',
-                 'demo_rpc::Node'],
+    base_classes=['BaseNodeI2cHandler'],
+    rpc_classes=['demo_rpc::Node'],
     DEFAULT_ARDUINO_BOARDS=DEFAULT_ARDUINO_BOARDS,
     setup=dict(name='wheeler.' + PROJECT_PREFIX,
                version=VERSION,
@@ -42,6 +39,6 @@ options(
                author_email='christian@fobel.net',
                url=URL,
                license='GPLv2',
-               install_requires=['wheeler.base_node_rpc>=0.6.post2'],
+               install_requires=['wheeler.base_node_rpc>=0.8'],
                packages=[PROJECT_PREFIX],
                package_data=package_files))
