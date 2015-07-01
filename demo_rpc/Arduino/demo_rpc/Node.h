@@ -2,9 +2,9 @@
 #define ___NODE__H___
 
 #include <BaseNodeRpc.h>
-#include <BaseNodeEeprom.h>
-#include <BaseNodeI2c.h>
-#include <BaseNodePb.h>
+#include <BaseNodeFixedBuffer.h>
+#include <BaseNodeSerialHandler.h>
+#include <BaseNodeI2cHandler.h>
 #include <Array.h>
 #include <I2cHandler.h>
 #include <SerialHandler.h>
@@ -21,35 +21,25 @@ const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
 
 
 class Node :
-  public BaseNode, public BaseNodeI2c, public BaseNodeEeprom {
+  public BaseNode,
+#ifndef DISABLE_SERIAL
+  public BaseNodeSerialHandler,
+#endif  // #ifndef DISABLE_SERIAL
+  public BaseNodeI2cHandler, public BaseNodeFixedBuffer<128> {
 public:
   typedef PacketParser<FixedPacket> parser_t;
-  typedef base_node_rpc::I2cReceiver<parser_t> i2c_receiver_t;
-  typedef base_node_rpc::I2cHandler<i2c_receiver_t, I2C_PACKET_SIZE>
-    i2c_handler_t;
-#ifndef DISABLE_SERIAL
-  typedef base_node_rpc::SerialReceiver<parser_t> serial_receiver_t;
-  typedef base_node_rpc::Handler<serial_receiver_t, PACKET_SIZE>
-    serial_handler_t;
-#endif  // #ifndef DISABLE_SERIAL
-
-  uint8_t buffer_[128];
-
-  i2c_handler_t i2c_handler_;
-#ifndef DISABLE_SERIAL
-  serial_handler_t serial_handler_;
-#endif  // #ifndef DISABLE_SERIAL
 
   nanopb::EepromMessage<Config, NodeConfigValidator> config_;
   nanopb::Message<State, NodeStateValidator> state_;
 
-  Node() : BaseNode(), config_(Config_fields), state_(State_fields) {
-    config_.set_buffer(get_buffer());
-    state_.set_buffer(get_buffer());
-  }
+  Node() : BaseNode(), config_(Config_fields), state_(State_fields) {}
+  UInt8Array get_buffer() { return buffer(); }
 
   void begin() {
+    config_.set_buffer(get_buffer());
+    state_.set_buffer(get_buffer());
     config_.load();
+    // Start Serial after loading config to set baud rate.
 #if !defined(DISABLE_SERIAL)
     Serial.begin(config_._.baud_rate);
 #endif  // #ifndef DISABLE_SERIAL
@@ -73,12 +63,6 @@ public:
     return state_.update(serialized);
   }
 
-  UInt8Array get_buffer() {
-    UInt8Array output;
-    output.data = buffer_;
-    output.length = sizeof(buffer_);
-    return output;
-  }
   void set_serial_number(uint32_t value) { config_._.serial_number = value; }
   uint32_t serial_number() { return config_._.serial_number; }
   void set_i2c_address(uint8_t value) {
@@ -116,22 +100,12 @@ public:
     return output;
   }
 
-  UInt8Array i2c_request(uint8_t address, UInt8Array data) {
-    UInt8Array result = i2c_handler_.request(address, data);
-    if (result.data == NULL) { result.data = get_buffer().data; }
-    return result;
-  }
-
   uint32_t sizeof_node() { return sizeof(Node); }
   uint32_t sizeof_config() { return sizeof(Config); }
   uint32_t sizeof_state() { return sizeof(State); }
   uint32_t sizeof_parser() { return sizeof(parser_t); }
   uint32_t sizeof_packet_struct() { return sizeof(FixedPacket); }
   uint32_t sizeof_packet() { return PACKET_SIZE; }
-  uint32_t sizeof_i2c_handler() { return sizeof(i2c_handler_t); }
-#ifndef DISABLE_SERIAL
-  uint32_t sizeof_serial_handler() { return sizeof(serial_handler_t); }
-#endif  // #ifndef DISABLE_SERIAL
 };
 
 }  // namespace demo_rpc
