@@ -2,138 +2,26 @@
 #define ___NODE__H___
 
 #include <BaseNodeRpc.h>
-#include <BaseNodeConfig.h>
 #include <BaseNodeEeprom.h>
 #include <BaseNodeI2c.h>
 #include <BaseNodePb.h>
-//#include <BaseNodeState.h>
 #include <Array.h>
 #include <I2cHandler.h>
 #include <SerialHandler.h>
 #include <pb_validate.h>
+#include <pb_eeprom.h>
 #include "demo_rpc_config_validate.h"
 namespace demo_rpc {
 #include "demo_rpc_config_pb.h"
 
 
-template <typename Fields>
-inline Config get_pb_default(Fields const &fields) {
-  /* Use nanopb decode with `init_default` set to `true` as a workaround to
-   * avoid needing to initialize the object (i.e., `_`) using the
-   * `<message>_init_default` macro.
-   *
-   * This is necessary because the macro resolves to an initialization list,
-   * which cannot be referenced in a memory efficient, generalizable way. */
-  Config obj;
-  UInt8Array null_array;
-  null_array.length = 0;
-  base_node_rpc::decode_from_array(null_array, fields, obj, true);
-  return obj;
-}
-
-
-//class NodeConfig : public BaseNodePb {
-class NodeConfig {
-public:
-  Config _;
-  MessageValidator<2> validator_;
-  SerialNumberValidator serial_number_validator_;
-  I2cAddressValidator i2c_address_validator_;
-  UInt8Array buffer_;
-  const pb_field_t *fields_;
-
-  NodeConfig(const pb_field_t *fields, size_t buffer_size, uint8_t *buffer)
-    : fields_(fields) {
-    buffer_.length = buffer_size;
-    buffer_.data = buffer;
-    validator_.register_validator(serial_number_validator_);
-    validator_.register_validator(i2c_address_validator_);
-  }
-
-  NodeConfig(const pb_field_t *fields, UInt8Array buffer)
-    : fields_(fields), buffer_(buffer) {
-    validator_.register_validator(serial_number_validator_);
-    validator_.register_validator(i2c_address_validator_);
-  }
-  void reset() {
-    _ = get_pb_default(fields_);
-  }
-  uint8_t update(UInt8Array serialized) {
-    Config &obj = *((Config *)buffer_.data);
-    bool ok = base_node_rpc::decode_from_array(serialized,
-                                               fields_,
-                                               obj, true);  // init_default
-    if (ok) {
-      validator_.update(fields_, obj, _);
-    }
-    return ok;
-  }
-  UInt8Array serialize() {
-    return base_node_rpc::serialize_to_array(_, fields_, buffer_);
-  }
-  void validate() {
-    Config &obj = *((Config *)buffer_.data);
-    obj = get_pb_default(fields_);
-    /* Validate the active configuration structure (i.e., trigger the
-     * validation callbacks). */
-    validator_.update(fields_, _, obj);
-  }
-  void load(uint8_t address=0) {
-    if (!base_node_rpc::decode_obj_from_eeprom(address, _, fields_,
-                                               buffer_)) {
-      /* Configuration could not be loaded from EEPROM; reset obj. */
-      reset();
-    }
-    validate();
-  }
-  void save() {
-    UInt8Array serialized = serialize();
-    if (serialized.data != NULL) {
-      base_node_rpc::array_to_eeprom(0, serialized);
-    }
-  }
-};
-
-
-#if 0
-class NodeState : public BaseNodePb {
-public:
-  State state_;
-  MessageValidator<2> state_validator_;
-  FloatValueValidator float_value_validator_;
-  IntegerValueValidator integer_value_validator_;
-
-  void init_state() {
-    state_validator_.register_validator(float_value_validator_);
-    state_validator_.register_validator(integer_value_validator_);
-  }
-  void reset_state() { state_ = State_init_default; }
-  uint8_t update_state(UInt8Array serialized_state) {
-    State state = State_init_default;
-    bool ok = base_node_rpc::decode_from_array(serialized_state,
-                                               State_fields,
-                                               state);
-    if (ok) {
-      state_validator_.update(State_fields, state, state_);
-    }
-    return ok;
-  }
-  UInt8Array serialize_state() {
-    return serialize_obj(state_, State_fields);
-  }
-  void validate_state(UInt8Array buffer) {
-    State &state = *((State *)buffer.data);
-    state = State_init_default;
-    /* Validate the active stateuration structure (i.e., trigger the
-     * validation callbacks). */
-    state_validator_.update(State_fields, state_, state);
-  }
-};
-#endif
+const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
+                           - sizeof(uint16_t)  // UUID
+                           - sizeof(uint16_t));  // Payload length
 
 
 class Node :
-  public BaseNode, public BaseNodeEeprom, public BaseNodeI2c {
+  public BaseNode, public BaseNodeI2c, public BaseNodeEeprom {
 public:
   typedef PacketParser<FixedPacket> parser_t;
   typedef base_node_rpc::I2cReceiver<parser_t> i2c_receiver_t;
@@ -145,48 +33,50 @@ public:
     serial_handler_t;
 #endif  // #ifndef DISABLE_SERIAL
 
-  uint8_t output_buffer[128];
+  uint8_t buffer_[128];
 
   i2c_handler_t i2c_handler_;
 #ifndef DISABLE_SERIAL
   serial_handler_t serial_handler_;
 #endif  // #ifndef DISABLE_SERIAL
 
-  NodeConfig config_;
-  //NodeState state_;
+  nanopb::EepromMessage<Config, NodeConfigValidator> config_;
+  nanopb::Message<State, NodeStateValidator> state_;
 
-  Node() : BaseNode(), config_(Config_fields, sizeof(output_buffer),
-                               &output_buffer[0]) {
-    /* Configuration must be loaded after `i2c_address_validator_` has been
-     * registered, since i2c address validator sets the address of the `Wire`
-     * interface. */
-    config_.load();
-    //config_.init_state();
+  Node() : BaseNode(), config_(Config_fields), state_(State_fields) {
+    config_.set_buffer(get_buffer());
+    state_.set_buffer(get_buffer());
   }
-  uint32_t max_payload_size() {
-    return (PACKET_SIZE
-            - 3 * sizeof(uint8_t)  // Frame boundary
-            - sizeof(uint16_t)  // UUID
-            - sizeof(uint16_t));  // Payload length
-  }
+
   void begin() {
+    config_.load();
 #if !defined(DISABLE_SERIAL)
-    Serial.begin(115200);
+    Serial.begin(config_._.baud_rate);
 #endif  // #ifndef DISABLE_SERIAL
     // Set i2c clock-rate to 400kHz.
     TWBR = 12;
   }
-  void load_config() { config_.load(); }
+
+  uint32_t max_payload_size() { return PACKET_SIZE - FRAME_SIZE; }
+
+  void load_config() { config_.load(0); }
+  void save_config() { config_.save(0); }
   void reset_config() { config_.reset(); }
+  UInt8Array serialize_config() { return config_.serialize(); }
   uint8_t update_config(UInt8Array serialized) {
     return config_.update(serialized);
   }
-  UInt8Array serialize_config() { return config_.serialize(); }
 
-  virtual UInt8Array get_buffer() {
+  void reset_state() { state_.reset(); }
+  UInt8Array serialize_state() { return state_.serialize(); }
+  uint8_t update_state(UInt8Array serialized) {
+    return state_.update(serialized);
+  }
+
+  UInt8Array get_buffer() {
     UInt8Array output;
-    output.data = output_buffer;
-    output.length = sizeof(output_buffer);
+    output.data = buffer_;
+    output.length = sizeof(buffer_);
     return output;
   }
   void set_serial_number(uint32_t value) { config_._.serial_number = value; }
@@ -196,7 +86,7 @@ public:
     uint32_t address = value;
     /* Validate address and update the active `Wire` configuration if the
      * address is valid. */
-    config_.i2c_address_validator_(address, config_._.i2c_address);
+    config_.validator_.i2c_address_(address, config_._.i2c_address);
     config_._.i2c_address = address;
   }
   uint16_t packet_crc(UInt8Array data) {
@@ -232,10 +122,9 @@ public:
     return result;
   }
 
-  uint32_t sizeof_node_config() { return sizeof(NodeConfig); }
-  //uint32_t sizeof_node_state() { return sizeof(NodeState); }
+  uint32_t sizeof_node() { return sizeof(Node); }
   uint32_t sizeof_config() { return sizeof(Config); }
-  //uint32_t sizeof_state() { return sizeof(State); }
+  uint32_t sizeof_state() { return sizeof(State); }
   uint32_t sizeof_parser() { return sizeof(parser_t); }
   uint32_t sizeof_packet_struct() { return sizeof(FixedPacket); }
   uint32_t sizeof_packet() { return PACKET_SIZE; }
