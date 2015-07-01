@@ -6,6 +6,7 @@
 #include <BaseNodeEeprom.h>
 #include <BaseNodeI2c.h>
 #include <BaseNodePb.h>
+#include <BaseNodeState.h>
 #include <Array.h>
 #include <I2cHandler.h>
 #include <SerialHandler.h>
@@ -29,9 +30,23 @@ public:
 };
 
 
+class NodeState : public BaseNodeState<State, MessageValidator<2> > {
+public:
+  typedef BaseNodeState<State, MessageValidator<2> > base_type;
+
+  NodeState() { reset_state(); }
+
+  const pb_field_t *get_state_fields() { return State_fields; }
+  State get_state_default() {
+    State result = State_init_default;
+    return result;
+  }
+};
+
+
 class Node :
   public BaseNode, public BaseNodeEeprom, public BaseNodeI2c,
-  public NodeConfig {
+  public NodeConfig, public NodeState {
 public:
   typedef PacketParser<FixedPacket> parser_t;
   typedef base_node_rpc::I2cReceiver<parser_t> i2c_receiver_t;
@@ -44,12 +59,10 @@ public:
 #endif  // #ifndef DISABLE_SERIAL
 
   uint8_t output_buffer[128];
-  State state_;
 
   SerialNumberValidator serial_number_validator_;
   I2cAddressValidator i2c_address_validator_;
 
-  MessageValidator<2> state_validator_;
   FloatValueValidator float_value_validator_;
   IntegerValueValidator integer_value_validator_;
 
@@ -62,7 +75,6 @@ public:
     config_validator_.register_validator(serial_number_validator_);
     config_validator_.register_validator(i2c_address_validator_);
     state_validator_.register_validator(float_value_validator_);
-    state_validator_.register_validator(integer_value_validator_);
     state_validator_.register_validator(integer_value_validator_);
     /* Configuration must be loaded after `i2c_address_validator_` has been
      * registered, since i2c address validator sets the address of the `Wire`
@@ -87,19 +99,6 @@ public:
     output.data = output_buffer;
     output.length = sizeof(output_buffer);
     return output;
-  }
-  void reset_state() { state_ = State_init_default; }
-  uint8_t update_state(UInt8Array serialized_state) {
-    State state;
-    bool ok = base_node_rpc::decode_from_array(serialized_state, State_fields,
-                                               state);
-    if (ok) {
-      state_validator_.update(State_fields, state, state_);
-    }
-    return ok;
-  }
-  UInt8Array serialize_state() {
-    return serialize_obj(state_, State_fields);
   }
   void set_serial_number(uint32_t value) { config_.serial_number = value; }
   uint32_t serial_number() { return config_.serial_number; }
