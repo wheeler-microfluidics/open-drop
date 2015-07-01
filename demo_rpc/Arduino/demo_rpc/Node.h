@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <NadaMQ.h>
 #include <BaseNodeRpc.h>
+#include <BaseNodeEeprom.h>
+#include <BaseNodeI2c.h>
 #include <BaseNodeConfig.h>
 #include <BaseNodeState.h>
 #include <BaseNodeSerialHandler.h>
@@ -27,6 +29,8 @@ typedef nanopb::Message<State, NodeStateValidator> state_t;
 
 class Node :
   public BaseNode,
+  public BaseNodeEeprom,
+  public BaseNodeI2c,
   public BaseNodeConfig<config_t>,
   public BaseNodeState<state_t>,
 #ifndef DISABLE_SERIAL
