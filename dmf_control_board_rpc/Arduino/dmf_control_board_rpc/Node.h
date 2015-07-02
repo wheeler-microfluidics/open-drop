@@ -14,9 +14,9 @@
 #include <SerialHandler.h>
 #include <pb_validate.h>
 #include <pb_eeprom.h>
-#include "wheeler_rpc_config_validate.h"
-namespace wheeler_rpc {
-#include "wheeler_rpc_config_pb.h"
+#include "dmf_control_board_rpc_config_validate.h"
+namespace dmf_control_board_rpc {
+#include "dmf_control_board_rpc_config_pb.h"
 
 
 const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
@@ -53,7 +53,7 @@ public:
   void set_i2c_address(uint8_t value);  // Override to validate i2c address
 };
 
-}  // namespace wheeler_rpc
+}  // namespace dmf_control_board_rpc
 
 
 #endif  // #ifndef ___NODE__H___

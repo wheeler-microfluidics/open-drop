@@ -6,7 +6,7 @@
 #endif  // ifdef __AVR__
 #include "pb_validate.h"
 
-namespace wheeler_rpc {
+namespace dmf_control_board_rpc {
 
 struct SerialNumberValidator : public ScalarFieldValidator<uint32_t, 1> {
     using ScalarFieldValidator<uint32_t, 1>::tags_;
@@ -87,6 +87,6 @@ public:
   }
 };
 
-}  // namespace wheeler_rpc
+}  // namespace dmf_control_board_rpc
 
 #endif  // #ifndef ___DEMO_RPC_CONFIG_VALIDATE___

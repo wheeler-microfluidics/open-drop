@@ -1,6 +1,6 @@
 #include "Node.h"
 
-namespace wheeler_rpc {
+namespace dmf_control_board_rpc {
 
 void Node::begin() {
   config_.set_buffer(get_buffer());
@@ -23,4 +23,4 @@ void Node::set_i2c_address(uint8_t value) {
   config_._.i2c_address = address;
 }
 
-}  // namespace wheeler_rpc
+}  // namespace dmf_control_board_rpc

@@ -36,7 +36,7 @@ options(
                   'BaseNodeI2c',
                   'BaseNodeI2cHandler',
                   'BaseNodeConfig<ConfigMessage, Address>'],
-    rpc_classes=['wheeler_rpc::Node'],
+    rpc_classes=['dmf_control_board_rpc::Node'],
     DEFAULT_ARDUINO_BOARDS=DEFAULT_ARDUINO_BOARDS,
     setup=dict(name='wheeler.' + PROJECT_PREFIX.replace('_', '-'),
                version=VERSION,
