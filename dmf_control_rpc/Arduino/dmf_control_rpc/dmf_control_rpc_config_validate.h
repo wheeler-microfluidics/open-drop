@@ -6,7 +6,7 @@
 #endif  // ifdef __AVR__
 #include "pb_validate.h"
 
-namespace dmf_control_board_rpc {
+namespace dmf_control_rpc {
 
 struct SerialNumberValidator : public ScalarFieldValidator<uint32_t, 1> {
     using ScalarFieldValidator<uint32_t, 1>::tags_;
@@ -87,6 +87,16 @@ public:
   }
 };
 
-}  // namespace dmf_control_board_rpc
+
+//class NodeStateValidator : public MessageValidator<1> {
+//public:
+  //SerialNumberValidator serial_number_;
+
+  //NodeStateValidator() {
+    //register_validator(serial_number_);
+  //}
+//};
+
+}  // namespace dmf_control_rpc
 
 #endif  // #ifndef ___DEMO_RPC_CONFIG_VALIDATE___

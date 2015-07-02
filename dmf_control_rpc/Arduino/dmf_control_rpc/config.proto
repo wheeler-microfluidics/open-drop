@@ -1,0 +1,15 @@
+message Config {
+  optional uint32 serial_number = 1;
+  optional uint32 baud_rate = 2 [default = 115200];
+  optional uint32 i2c_address = 3;
+
+  optional float max_waveform_voltage = 4 [default = 200];
+  optional float min_waveform_frequency = 5;
+  optional float max_waveform_frequency = 6 [default = 10000];
+}
+
+
+message State {
+  optional float voltage = 1;
+  optional float frequency = 2;
+}

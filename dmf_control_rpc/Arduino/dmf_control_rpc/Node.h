@@ -3,10 +3,12 @@
 
 #include <Arduino.h>
 #include <NadaMQ.h>
+#include <AdvancedADC.h>
 #include <BaseNodeRpc.h>
 #include <BaseNodeEeprom.h>
 #include <BaseNodeI2c.h>
 #include <BaseNodeConfig.h>
+#include <BaseNodeState.h>
 #include <BaseNodeSerialHandler.h>
 #include <BaseNodeI2cHandler.h>
 #include <Array.h>
@@ -14,9 +16,10 @@
 #include <SerialHandler.h>
 #include <pb_validate.h>
 #include <pb_eeprom.h>
-#include "dmf_control_board_rpc_config_validate.h"
-namespace dmf_control_board_rpc {
-#include "dmf_control_board_rpc_config_pb.h"
+#include "dmf_control_rpc_config_validate.h"
+#include "FeedbackController.h"
+namespace dmf_control_rpc {
+#include "dmf_control_rpc_config_pb.h"
 
 
 const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
@@ -24,12 +27,14 @@ const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
                            - sizeof(uint16_t));  // Payload length
 
 typedef nanopb::EepromMessage<Config, NodeConfigValidator> config_t;
+typedef nanopb::Message<State, MessageValidator<0> > state_t;
 
 class Node :
   public BaseNode,
   public BaseNodeEeprom,
   public BaseNodeI2c,
   public BaseNodeConfig<config_t>,
+  public BaseNodeState<state_t>,
 #ifndef DISABLE_SERIAL
   public BaseNodeSerialHandler,
 #endif  // #ifndef DISABLE_SERIAL
@@ -37,13 +42,12 @@ class Node :
 public:
   typedef PacketParser<FixedPacket> parser_t;
 
-#if __AVR_ATmega2560__
-  uint8_t buffer_[2048];
-#else
   uint8_t buffer_[128];
-#endif  // #if __AVR_ATmega2560__
 
-  Node() : BaseNode(), BaseNodeConfig(Config_fields) {}
+  FeedbackController feedback_controller_;
+
+  Node() : BaseNode(), BaseNodeConfig(Config_fields),
+           BaseNodeState(State_fields) {}
 
   UInt8Array get_buffer() { return UInt8Array(sizeof(buffer_), buffer_); }
   /* This is a required method to provide a temporary buffer to the
@@ -51,9 +55,23 @@ public:
 
   void begin();
   void set_i2c_address(uint8_t value);  // Override to validate i2c address
+
+  UInt8Array find_sampling_rate(float sampling_window_ms, float frequency,
+                                float max_sampling_rate) {
+    UInt8Array output = get_buffer();
+    float &sampling_rate_out = *((float *)&output.data[0]);
+    uint16_t &n_samples_per_window_out = *((uint16_t *)
+                                           &output.data[sizeof(float)]);
+    feedback_controller_.find_sampling_rate(sampling_window_ms, frequency,
+                                            max_sampling_rate,
+                                            &sampling_rate_out,
+                                            &n_samples_per_window_out);
+    output.length = sizeof(float) + sizeof(uint16_t);
+    return output;
+  }
 };
 
-}  // namespace dmf_control_board_rpc
+}  // namespace dmf_control_rpc
 
 
 #endif  // #ifndef ___NODE__H___
