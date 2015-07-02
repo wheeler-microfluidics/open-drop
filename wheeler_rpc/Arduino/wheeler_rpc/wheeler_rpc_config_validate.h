@@ -6,6 +6,7 @@
 #endif  // ifdef __AVR__
 #include "pb_validate.h"
 
+namespace wheeler_rpc {
 
 struct SerialNumberValidator : public ScalarFieldValidator<uint32_t, 1> {
     using ScalarFieldValidator<uint32_t, 1>::tags_;
@@ -73,32 +74,6 @@ struct I2cAddressValidator : public ScalarFieldValidator<uint32_t, 1> {
 };
 
 
-struct FloatValueValidator : public ScalarFieldValidator<float, 1> {
-    typedef float value_t;
-    using ScalarFieldValidator<value_t, 1>::tags_;
-
-    FloatValueValidator() { this->tags_[0] = 1; }
-
-    virtual bool operator()(value_t &source, value_t target) {
-        LOG("  current float value=%.2f, proposed float value=%.2f\n", a, b);
-        return (source > 3.14);
-    }
-};
-
-
-struct IntegerValueValidator : public ScalarFieldValidator<int32_t, 1> {
-    typedef int32_t value_t;
-    using ScalarFieldValidator<value_t, 1>::tags_;
-
-    IntegerValueValidator() { this->tags_[0] = 2; }
-
-    virtual bool operator()(value_t &source, value_t target) {
-        LOG("  current integer value=%d, proposed integer value=%d\n", a, b);
-        return (source > 5) && (source < 1024);
-    }
-};
-
-
 class NodeConfigValidator : public MessageValidator<3> {
 public:
   SerialNumberValidator serial_number_;
@@ -112,16 +87,6 @@ public:
   }
 };
 
-
-class NodeStateValidator : public MessageValidator<2> {
-public:
-  FloatValueValidator float_value_;
-  IntegerValueValidator integer_value_;
-
-  NodeStateValidator() {
-    register_validator(float_value_);
-    register_validator(integer_value_);
-  }
-};
+}  // namespace wheeler_rpc
 
 #endif  // #ifndef ___DEMO_RPC_CONFIG_VALIDATE___
