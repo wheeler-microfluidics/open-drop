@@ -16,9 +16,11 @@ install_distutils_tasks()
 DEFAULT_ARDUINO_BOARDS = ['uno', 'mega2560']
 PROJECT_PREFIX = [d for d in path('.').dirs()
                   if d.joinpath('Arduino').isdir()][0].name
+name = PROJECT_PREFIX.replace('_', '-')
+package_name = 'wheeler.' + name
 rpc_module = import_module(PROJECT_PREFIX)
 VERSION = version.getVersion()
-URL='http://github.com/wheeler-microfluidics/%s.git' % PROJECT_PREFIX
+URL='http://github.com/wheeler-microfluidics/%s.git' % name
 PROPERTIES = OrderedDict([('name', PROJECT_PREFIX),
                           ('manufacturer', 'Wheeler Lab'),
                           ('software_version', VERSION),
@@ -34,9 +36,9 @@ options(
                   'BaseNodeI2cHandler',
                   'BaseNodeConfig<ConfigMessage, Address>',
                   'BaseNodeState<StateMessage>'],
-    rpc_classes=['demo_rpc::Node'],
+    rpc_classes=['wheeler_rpc::Node'],
     DEFAULT_ARDUINO_BOARDS=DEFAULT_ARDUINO_BOARDS,
-    setup=dict(name='wheeler.' + PROJECT_PREFIX,
+    setup=dict(name='wheeler.' + PROJECT_PREFIX.replace('_', '-'),
                version=VERSION,
                description='Arduino RPC node packaged as Python package.',
                author='Christian Fobel',

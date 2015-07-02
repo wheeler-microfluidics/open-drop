@@ -1,6 +1,6 @@
 #include "Node.h"
 
-namespace demo_rpc {
+namespace wheeler_rpc {
 
 void Node::begin() {
   config_.set_buffer(get_buffer());
@@ -53,4 +53,4 @@ UInt8Array Node::test_parser(UInt8Array data) {
   return output;
 }
 
-}  // namespace demo_rpc
+}  // namespace wheeler_rpc

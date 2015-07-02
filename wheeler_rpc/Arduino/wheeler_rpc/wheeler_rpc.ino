@@ -12,8 +12,8 @@
 #include "packet_handler.h"
 
 
-demo_rpc::Node node_obj;
-demo_rpc::CommandProcessor<demo_rpc::Node> command_processor(node_obj);
+wheeler_rpc::Node node_obj;
+wheeler_rpc::CommandProcessor<wheeler_rpc::Node> command_processor(node_obj);
 
 
 void i2c_receive_event(int byte_count) { node_obj.i2c_handler_.receiver()(byte_count); }
