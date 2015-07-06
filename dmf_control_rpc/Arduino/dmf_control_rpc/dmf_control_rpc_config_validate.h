@@ -88,14 +88,48 @@ public:
 };
 
 
-//class NodeStateValidator : public MessageValidator<1> {
-//public:
-  //SerialNumberValidator serial_number_;
+template <typename NodeT>
+struct VoltageValidator : public ScalarFieldValidator<float, 1> {
+  typedef ScalarFieldValidator<float, 1> base_type;
 
-  //NodeStateValidator() {
-    //register_validator(serial_number_);
-  //}
-//};
+  NodeT *node_p_;
+  VoltageValidator() : node_p_(NULL) { this->tags_[0] = 1; }
+
+  void set_node(NodeT &node) { node_p_ = &node; }
+  virtual bool operator()(float &source, float target) {
+    if (node_p_ != NULL) { return node_p_->on_voltage_changed(target, source); }
+    return false;
+  }
+};
+
+
+template <typename NodeT>
+struct FrequencyValidator : public ScalarFieldValidator<float, 1> {
+  typedef ScalarFieldValidator<float, 1> base_type;
+
+  NodeT *node_p_;
+  FrequencyValidator() : node_p_(NULL) { this->tags_[0] = 2; }
+
+  void set_node(NodeT &node) { node_p_ = &node; }
+
+  virtual bool operator()(float &source, float target) {
+    if (node_p_ != NULL) { return node_p_->on_frequency_changed(target, source); }
+    return false;
+  }
+};
+
+
+template <typename NodeT>
+class NodeStateValidator : public MessageValidator<2> {
+public:
+  VoltageValidator<NodeT> voltage_;
+  FrequencyValidator<NodeT> frequency_;
+
+  NodeStateValidator() {
+    register_validator(voltage_);
+    register_validator(frequency_);
+  }
+};
 
 }  // namespace dmf_control_rpc
 

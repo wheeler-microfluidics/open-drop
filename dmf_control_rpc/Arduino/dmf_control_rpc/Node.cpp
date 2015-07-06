@@ -3,10 +3,14 @@
 namespace dmf_control_rpc {
 
 void Node::begin() {
-  state_.set_buffer(get_buffer());
   config_.set_buffer(get_buffer());
   config_.reset();
   config_.load();
+  state_.set_buffer(get_buffer());
+  state_.validator_.voltage_.set_node(*this);
+  state_.validator_.frequency_.set_node(*this);
+  state_._.voltage = 0;
+  state_._.frequency = config_._.min_waveform_frequency;
   // Start Serial after loading config to set baud rate.
 #if !defined(DISABLE_SERIAL)
   //Serial.begin(config_._.baud_rate);
