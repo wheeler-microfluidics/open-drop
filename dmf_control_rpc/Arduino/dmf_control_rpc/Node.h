@@ -22,7 +22,8 @@ namespace dmf_control_rpc {
 
 const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
                            - sizeof(uint16_t)  // UUID
-                           - sizeof(uint16_t));  // Payload length
+                           - sizeof(uint16_t)  // Payload length
+                           - sizeof(uint16_t));  // CRC
 
 class Node;
 
