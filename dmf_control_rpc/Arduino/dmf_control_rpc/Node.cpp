@@ -5,6 +5,7 @@ namespace dmf_control_rpc {
 void Node::begin() {
   state_.set_buffer(get_buffer());
   config_.set_buffer(get_buffer());
+  config_.reset();
   config_.load();
   // Start Serial after loading config to set baud rate.
 #if !defined(DISABLE_SERIAL)
