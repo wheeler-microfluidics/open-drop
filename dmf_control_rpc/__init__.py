@@ -7,10 +7,7 @@ try:
     from .config import Config, State
 except (ImportError, TypeError):
     pass
-try:
-    from .node import Proxy, I2cProxy
-except (ImportError, TypeError):
-    pass
+from proxy import Proxy, I2cProxy
 
 
 def package_path():
