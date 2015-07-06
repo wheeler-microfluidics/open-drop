@@ -3,7 +3,6 @@
 #include "SPI.h"
 #include "Wire.h"
 #include "Memory.h"
-#include "AdvancedADC.h"
 #include "nanopb.h"
 #include "NadaMQ.h"
 #include "ArduinoRPC.h"

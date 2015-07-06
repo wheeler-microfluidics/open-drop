@@ -13,7 +13,6 @@ void Node::begin() {
 #endif  // #ifndef DISABLE_SERIAL
   // Set i2c clock-rate to 400kHz.
   TWBR = 12;
-  feedback_controller_.begin(0, 1);
 }
 
 
