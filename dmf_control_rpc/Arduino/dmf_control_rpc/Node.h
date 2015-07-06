@@ -42,7 +42,11 @@ class Node :
 public:
   typedef PacketParser<FixedPacket> parser_t;
 
-  uint8_t buffer_[128];
+  static const uint16_t BUFFER_SIZE = 128;  // >= longest property string
+  static const uint16_t CHANNEL_COUNT = 40;
+
+  uint8_t buffer_[BUFFER_SIZE];
+  uint8_t state_of_channels_[CHANNEL_COUNT / 8];  // 8 channels per byte
 
   Node() : BaseNode(), BaseNodeConfig(Config_fields),
            BaseNodeState(State_fields) {}
@@ -65,6 +69,21 @@ public:
     return ((config_._.min_waveform_frequency <= new_value) &&
             (new_value <= config_._.max_waveform_frequency));
   }
+
+  UInt8Array state_of_channels() const {
+    return UInt8Array(sizeof(state_of_channels_),
+                      (uint8_t *)&state_of_channels_[0]);
+  }
+  bool set_state_of_channels(UInt8Array channel_states) {
+    if (channel_states.length == sizeof(state_of_channels_)) {
+      for (int i = 0; i < channel_states.length; i++) {
+        state_of_channels_[i] = channel_states.data[i];
+      }
+      return true;
+    }
+    return false;
+  }
+  uint16_t channel_count const { return CHANNEL_COUNT; }
 };
 
 }  // namespace dmf_control_rpc
