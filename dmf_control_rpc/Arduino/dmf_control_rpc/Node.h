@@ -64,18 +64,6 @@ public:
   void begin();
   void set_i2c_address(uint8_t value);  // Override to validate i2c address
 
-  bool on_voltage_changed(float original_value, float new_value) {
-    /* This method is triggered whenever a voltage is included in a state
-     * update. */
-    return (0 <= new_value) && (new_value <= config_._.max_waveform_voltage);
-  }
-  bool on_frequency_changed(float original_value, float new_value) {
-    /* This method is triggered whenever a frequency is included in a state
-     * update. */
-    return ((config_._.min_waveform_frequency <= new_value) &&
-            (new_value <= config_._.max_waveform_frequency));
-  }
-
   UInt8Array state_of_channels() const {
     return UInt8Array(sizeof(state_of_channels_),
                       (uint8_t *)&state_of_channels_[0]);
@@ -89,7 +77,20 @@ public:
     }
     return false;
   }
-  uint16_t channel_count const { return CHANNEL_COUNT; }
+
+  uint16_t channel_count() const { return CHANNEL_COUNT; }
+
+  bool on_state_voltage_changed(float original_value, float new_value) {
+    /* This method is triggered whenever a voltage is included in a state
+     * update. */
+    return (0 <= new_value) && (new_value <= config_._.max_waveform_voltage);
+  }
+  bool on_state_frequency_changed(float new_value) {
+    /* This method is triggered whenever a frequency is included in a state
+     * update. */
+    return ((config_._.min_waveform_frequency <= new_value) &&
+            (new_value <= config_._.max_waveform_frequency));
+  }
 };
 
 }  // namespace dmf_control_rpc
