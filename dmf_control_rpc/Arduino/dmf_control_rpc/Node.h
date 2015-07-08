@@ -1,6 +1,7 @@
 #ifndef ___NODE__H___
 #define ___NODE__H___
 
+#include <stdint.h>
 #include <Arduino.h>
 #include <NadaMQ.h>
 #include <BaseNodeRpc.h>
@@ -16,6 +17,7 @@
 #include <pb_validate.h>
 #include <pb_eeprom.h>
 #include "dmf_control_rpc_config_validate.h"
+#include "dmf_control_rpc_state_validate.h"
 namespace dmf_control_rpc {
 #include "dmf_control_rpc_config_pb.h"
 
@@ -27,8 +29,11 @@ const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
 
 class Node;
 
-typedef nanopb::EepromMessage<Config, NodeConfigValidator> config_t;
-typedef nanopb::Message<State, NodeStateValidator<Node> > state_t;
+typedef nanopb::EepromMessage<dmf_control_rpc_Config,
+                              typename
+                              config_validate::Validator<Node> > config_t;
+typedef nanopb::Message<dmf_control_rpc_State,
+                        typename state_validate::Validator<Node> > state_t;
 
 class Node :
   public BaseNode,
@@ -49,8 +54,8 @@ public:
   uint8_t buffer_[BUFFER_SIZE];
   uint8_t state_of_channels_[CHANNEL_COUNT / 8];  // 8 channels per byte
 
-  Node() : BaseNode(), BaseNodeConfig(Config_fields),
-           BaseNodeState(State_fields) {}
+  Node() : BaseNode(), BaseNodeConfig(dmf_control_rpc_Config_fields),
+           BaseNodeState(dmf_control_rpc_State_fields) {}
 
   UInt8Array get_buffer() { return UInt8Array(sizeof(buffer_), buffer_); }
   /* This is a required method to provide a temporary buffer to the
