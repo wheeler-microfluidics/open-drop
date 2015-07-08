@@ -28,6 +28,9 @@ try:
         def state(self, value):
             return self.update_state(value)
 
+        def _state_of_channels(self):
+            return super(ProxyMixin, self).state_of_channels()
+
         @property
         def state_of_channels(self):
             '''
