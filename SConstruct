@@ -8,7 +8,8 @@ import arduino_scons.auto_config
 from arduino_scons.git_util import GitUtil
 
 project_name = [d for d in path('.').dirs()
-                if d.joinpath('Arduino').isdir()][0].name
+                if d.joinpath('Arduino').isdir()
+                and d.name not in ('build', )][0].name
 rpc_module = import_module(project_name)
 
 
