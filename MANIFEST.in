@@ -6,3 +6,6 @@ include pavement.py
 include paver-minilib.zip
 include setup.py
 include SConstruct
+recursive-include open_drop *
+recursive-exclude open_drop *.pyc
+recursive-exclude open_drop *.o

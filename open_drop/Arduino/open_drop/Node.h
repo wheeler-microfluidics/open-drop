@@ -18,10 +18,10 @@
 #include <pb_eeprom.h>
 #include "open_drop_config_validate.h"
 #include "open_drop_state_validate.h"
-namespace open_drop {
 #include "open_drop_config_pb.h"
 
 
+namespace open_drop {
 const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
                            - sizeof(uint16_t)  // UUID
                            - sizeof(uint16_t)  // Payload length
@@ -30,10 +30,9 @@ const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
 class Node;
 
 typedef nanopb::EepromMessage<open_drop_Config,
-                              typename
                               config_validate::Validator<Node> > config_t;
 typedef nanopb::Message<open_drop_State,
-                        typename state_validate::Validator<Node> > state_t;
+                        state_validate::Validator<Node> > state_t;
 
 class Node :
   public BaseNode,
@@ -54,8 +53,8 @@ public:
   uint8_t buffer_[BUFFER_SIZE];
   uint8_t state_of_channels_[CHANNEL_COUNT / 8];  // 8 channels per byte
 
-  Node() : BaseNode(), BaseNodeConfig(open_drop_Config_fields),
-           BaseNodeState(open_drop_State_fields) {}
+  Node() : BaseNode(), BaseNodeConfig<config_t>(open_drop_Config_fields),
+           BaseNodeState<state_t>(open_drop_State_fields) {}
 
   UInt8Array get_buffer() { return UInt8Array(sizeof(buffer_), buffer_); }
   /* This is a required method to provide a temporary buffer to the
