@@ -3,7 +3,6 @@
 #include "SPI.h"
 #include "Wire.h"
 #include "Memory.h"
-#include "AdvancedADC.h"
 #include "nanopb.h"
 #include "NadaMQ.h"
 #include "ArduinoRPC.h"
@@ -14,8 +13,8 @@
 #include "packet_handler.h"
 
 
-dmf_control_rpc::Node node_obj;
-dmf_control_rpc::CommandProcessor<dmf_control_rpc::Node> command_processor(node_obj);
+open_drop::Node node_obj;
+open_drop::CommandProcessor<open_drop::Node> command_processor(node_obj);
 
 
 void i2c_receive_event(int byte_count) { node_obj.i2c_handler_.receiver()(byte_count); }

@@ -1,0 +1,27 @@
+package open_drop;
+
+message Config {
+  /* Field numbers 1-49 reserved for base-node-rpc standard fields.
+   *
+   * This makes it possible for clients/devices based on the base-node-rpc
+   * package to interface with each other. */
+  optional uint32 serial_number = 1;
+  optional uint32 baud_rate = 2 [default = 115200];
+  optional uint32 i2c_address = 3;
+
+  /* Start new fields below.
+   * For example:
+   *
+   *      optional float my_float_field = 50;
+   *      optional int32 my_int_field = 51;
+   */
+  optional float max_waveform_voltage = 50 [default = 200];
+  optional float min_waveform_frequency = 51;
+  optional float max_waveform_frequency = 52 [default = 10000];
+}
+
+
+message State {
+  optional float voltage = 1;
+  optional float frequency = 2;
+}

@@ -13,7 +13,7 @@ sys.path.insert(0, '.')
 import version
 install_distutils_tasks()
 
-DEFAULT_ARDUINO_BOARDS = ['mega2560']
+DEFAULT_ARDUINO_BOARDS = ['uno', 'mega2560']
 PROJECT_PREFIX = [d for d in path('.').dirs()
                   if d.joinpath('Arduino').isdir()][0].name
 name = PROJECT_PREFIX.replace('_', '-')
@@ -37,7 +37,7 @@ options(
                   'BaseNodeI2cHandler',
                   'BaseNodeConfig<ConfigMessage, Address>',
                   'BaseNodeState<StateMessage>'],
-    rpc_classes=['dmf_control_rpc::Node'],
+    rpc_classes=['open_drop::Node'],
     DEFAULT_ARDUINO_BOARDS=DEFAULT_ARDUINO_BOARDS,
     setup=dict(name='wheeler.' + PROJECT_PREFIX.replace('_', '-'),
                version=VERSION,

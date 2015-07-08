@@ -1,11 +1,16 @@
 #include "Node.h"
 
-namespace dmf_control_rpc {
+namespace open_drop {
 
 void Node::begin() {
-  state_.set_buffer(get_buffer());
   config_.set_buffer(get_buffer());
+  config_.validator_.set_node(*this);
+  config_.reset();
   config_.load();
+  state_.set_buffer(get_buffer());
+  state_.validator_.set_node(*this);
+  state_._.voltage = 0;
+  state_._.frequency = config_._.min_waveform_frequency;
   // Start Serial after loading config to set baud rate.
 #if !defined(DISABLE_SERIAL)
   //Serial.begin(config_._.baud_rate);
@@ -13,7 +18,6 @@ void Node::begin() {
 #endif  // #ifndef DISABLE_SERIAL
   // Set i2c clock-rate to 400kHz.
   TWBR = 12;
-  feedback_controller_.begin(0, 1);
 }
 
 
@@ -26,4 +30,4 @@ void Node::set_i2c_address(uint8_t value) {
   config_._.i2c_address = address;
 }
 
-}  // namespace dmf_control_rpc
+}  // namespace open_drop

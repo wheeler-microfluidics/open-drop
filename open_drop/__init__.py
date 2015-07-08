@@ -7,21 +7,7 @@ try:
     from .config import Config, State
 except (ImportError, TypeError):
     pass
-
-
-try:
-    from .node import Proxy as _Proxy, I2cProxy as _I2cProxy
-
-    class Proxy(_Proxy):
-        def find_sampling_rate(self, sampling_window_ms, frequency,
-                               max_sampling_rate):
-            result = super(Proxy, self).find_sampling_rate(sampling_window_ms,
-                                                           frequency,
-                                                           max_sampling_rate)
-            return result.view([('sampling_rate', 'f32'),
-                                ('n_samples_per_window', 'uint16')])
-except (ImportError, TypeError):
-    pass
+from proxy import Proxy, I2cProxy
 
 
 def package_path():
