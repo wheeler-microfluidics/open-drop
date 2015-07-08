@@ -1,6 +1,6 @@
 #include "Node.h"
 
-namespace dmf_control_rpc {
+namespace open_drop {
 
 void Node::begin() {
   config_.set_buffer(get_buffer());
@@ -30,4 +30,4 @@ void Node::set_i2c_address(uint8_t value) {
   config_._.i2c_address = address;
 }
 
-}  // namespace dmf_control_rpc
+}  // namespace open_drop

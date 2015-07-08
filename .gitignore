@@ -9,6 +9,8 @@ paver-minilib.zip
 dist/*
 build/*
 */*_pb2.py
+*/Arduino/*/*config_validate.h
+*/Arduino/*/*state_validate.h
 */Arduino/*/*RPCBuffer.h
 */Arduino/*/*CommandProcessor.h
 */Arduino/*/*_pb.*

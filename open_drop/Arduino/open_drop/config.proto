@@ -1,4 +1,4 @@
-package dmf_control_rpc;
+package open_drop;
 
 message Config {
   /* Field numbers 1-49 reserved for base-node-rpc standard fields.

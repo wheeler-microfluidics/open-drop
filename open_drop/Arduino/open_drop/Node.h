@@ -16,10 +16,10 @@
 #include <SerialHandler.h>
 #include <pb_validate.h>
 #include <pb_eeprom.h>
-#include "dmf_control_rpc_config_validate.h"
-#include "dmf_control_rpc_state_validate.h"
-namespace dmf_control_rpc {
-#include "dmf_control_rpc_config_pb.h"
+#include "open_drop_config_validate.h"
+#include "open_drop_state_validate.h"
+namespace open_drop {
+#include "open_drop_config_pb.h"
 
 
 const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
@@ -29,10 +29,10 @@ const size_t FRAME_SIZE = (3 * sizeof(uint8_t)  // Frame boundary
 
 class Node;
 
-typedef nanopb::EepromMessage<dmf_control_rpc_Config,
+typedef nanopb::EepromMessage<open_drop_Config,
                               typename
                               config_validate::Validator<Node> > config_t;
-typedef nanopb::Message<dmf_control_rpc_State,
+typedef nanopb::Message<open_drop_State,
                         typename state_validate::Validator<Node> > state_t;
 
 class Node :
@@ -54,8 +54,8 @@ public:
   uint8_t buffer_[BUFFER_SIZE];
   uint8_t state_of_channels_[CHANNEL_COUNT / 8];  // 8 channels per byte
 
-  Node() : BaseNode(), BaseNodeConfig(dmf_control_rpc_Config_fields),
-           BaseNodeState(dmf_control_rpc_State_fields) {}
+  Node() : BaseNode(), BaseNodeConfig(open_drop_Config_fields),
+           BaseNodeState(open_drop_State_fields) {}
 
   UInt8Array get_buffer() { return UInt8Array(sizeof(buffer_), buffer_); }
   /* This is a required method to provide a temporary buffer to the
@@ -93,7 +93,7 @@ public:
   }
 };
 
-}  // namespace dmf_control_rpc
+}  // namespace open_drop
 
 
 #endif  // #ifndef ___NODE__H___
