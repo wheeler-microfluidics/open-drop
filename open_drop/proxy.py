@@ -28,6 +28,18 @@ try:
         def state(self, value):
             return self.update_state(value)
 
+        def update_config(self, **kwargs):
+            from .config import Config
+
+            config = Config(**kwargs)
+            return super(ProxyMixin, self).update_config(config)
+
+        def update_state(self, **kwargs):
+            from .config import State
+
+            state = State(**kwargs)
+            return super(ProxyMixin, self).update_state(state)
+
         def _state_of_channels(self):
             return super(ProxyMixin, self).state_of_channels()
 
