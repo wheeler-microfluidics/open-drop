@@ -15,7 +15,8 @@ install_distutils_tasks()
 
 DEFAULT_ARDUINO_BOARDS = ['uno', 'mega2560']
 PROJECT_PREFIX = [d for d in path('.').dirs()
-                  if d.joinpath('Arduino').isdir()][0].name
+                  if d.joinpath('Arduino').isdir()
+                  and d.name not in ('build', )][0].name
 name = PROJECT_PREFIX.replace('_', '-')
 package_name = 'wheeler.' + name
 rpc_module = import_module(PROJECT_PREFIX)
@@ -25,8 +26,6 @@ PROPERTIES = OrderedDict([('name', PROJECT_PREFIX),
                           ('manufacturer', 'Wheeler Lab'),
                           ('software_version', VERSION),
                           ('url', URL)])
-package_files = find_package_data(package=PROJECT_PREFIX, where=PROJECT_PREFIX,
-                                  only_in_packages=False)
 
 options(
     rpc_module=rpc_module,
@@ -47,5 +46,5 @@ options(
                url=URL,
                license='GPLv2',
                install_requires=['wheeler.base_node_rpc>=0.10.post1'],
-               packages=[PROJECT_PREFIX],
-               package_data=package_files))
+               include_package_data=True,
+               packages=[str(PROJECT_PREFIX)]))

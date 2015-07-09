@@ -23,3 +23,5 @@ arduino_rpc/protobuf_commands.py
 .ipynb_checkpoints
 */node.py
 */config.py
+*~
+*.swp
