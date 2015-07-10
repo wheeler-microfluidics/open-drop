@@ -10,7 +10,6 @@
 #include "RPCBuffer.h"
 #include "NodeCommandProcessor.h"
 #include "Node.h"
-#include "packet_handler.h"
 
 
 open_drop::Node node_obj;
