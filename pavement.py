@@ -45,6 +45,6 @@ options(
                author_email='christian@fobel.net',
                url=URL,
                license='GPLv2',
-               install_requires=['wheeler.base_node_rpc>=0.10.post1'],
+               install_requires=['wheeler.base_node_rpc>=0.10.post3'],
                include_package_data=True,
                packages=[str(PROJECT_PREFIX)]))
