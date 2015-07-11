@@ -69,7 +69,7 @@ public:
   }
   bool set_state_of_channels(UInt8Array channel_states) {
     if (channel_states.length == sizeof(state_of_channels_)) {
-      for (int i = 0; i < channel_states.length; i++) {
+      for (uint16_t i = 0; i < channel_states.length; i++) {
         state_of_channels_[i] = channel_states.data[i];
       }
       return true;
