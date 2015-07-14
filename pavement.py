@@ -33,7 +33,7 @@ options(
     base_classes=['BaseNodeSerialHandler',
                   'BaseNodeEeprom',
                   'BaseNodeI2c',
-                  'BaseNodeI2cHandler',
+                  'BaseNodeI2cHandler<Handler>',
                   'BaseNodeConfig<ConfigMessage, Address>',
                   'BaseNodeState<StateMessage>'],
     rpc_classes=['open_drop::Node'],
@@ -45,6 +45,6 @@ options(
                author_email='christian@fobel.net',
                url=URL,
                license='GPLv2',
-               install_requires=['wheeler.base_node_rpc>=0.10.post12'],
+               install_requires=['wheeler.base_node_rpc>=0.11'],
                include_package_data=True,
                packages=[str(PROJECT_PREFIX)]))
