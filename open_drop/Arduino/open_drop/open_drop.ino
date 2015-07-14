@@ -5,7 +5,6 @@
 #include "Memory.h"
 #include "nanopb.h"
 #include "NadaMQ.h"
-#include "ArduinoRPC.h"
 #include "Array.h"
 #include "RPCBuffer.h"
 #include "NodeCommandProcessor.h"
