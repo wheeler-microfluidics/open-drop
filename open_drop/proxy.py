@@ -62,6 +62,9 @@ try:
 
         @state_of_channels.setter
         def state_of_channels(self, states):
+            self.set_state_of_channels(states)
+
+        def set_state_of_channels(self, states):
             '''
             Pack array containing one entry per channel to bytes (8 channels
             per byte).  Set state of channels on device using state bytes.
@@ -70,8 +73,12 @@ try:
             '''
             import numpy as np
 
-            return (super(ProxyMixin, self)
+            ok =  (super(ProxyMixin, self)
                     .set_state_of_channels(np.packbits(states)))
+            if not ok:
+                raise ValueError('Error setting state of channels.  Check '
+                                 'number of states matches channel count.')
+
 
     class Proxy(ProxyMixin, _Proxy):
         pass
