@@ -13,7 +13,7 @@ sys.path.insert(0, '.')
 import version
 install_distutils_tasks()
 
-DEFAULT_ARDUINO_BOARDS = ['uno', 'mega2560']
+DEFAULT_ARDUINO_BOARDS = ['uno']
 PROJECT_PREFIX = [d for d in path('.').dirs()
                   if d.joinpath('Arduino').isdir()
                   and d.name not in ('build', )][0].name
@@ -45,6 +45,6 @@ options(
                author_email='christian@fobel.net',
                url=URL,
                license='GPLv2',
-               install_requires=['wheeler.base_node_rpc>=0.11'],
+               install_requires=['wheeler.base_node_rpc>=0.10post16'],
                include_package_data=True,
                packages=[str(PROJECT_PREFIX)]))

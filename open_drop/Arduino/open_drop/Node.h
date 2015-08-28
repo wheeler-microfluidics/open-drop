@@ -18,7 +18,7 @@
 #include <pb_eeprom.h>
 #include "open_drop_config_validate.h"
 #include "open_drop_state_validate.h"
-#include "open_drop_config_pb.h"
+#include "OpenDrop/config_pb.h"
 
 
 namespace open_drop {

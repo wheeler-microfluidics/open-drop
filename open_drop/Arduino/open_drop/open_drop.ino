@@ -7,7 +7,7 @@
 #include "NadaMQ.h"
 #include "Array.h"
 #include "RPCBuffer.h"
-#include "NodeCommandProcessor.h"
+#include "OpenDrop/CommandProcessor.h"
 #include "Node.h"
 
 

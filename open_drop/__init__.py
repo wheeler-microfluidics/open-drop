@@ -21,6 +21,10 @@ def get_sketch_directory():
     return package_path().joinpath('Arduino', package_path().name)
 
 
+def get_lib_directory():
+    return package_path().joinpath('Arduino', 'library')
+
+
 def get_includes():
     '''
     Return directories containing the Arduino header files.
@@ -36,7 +40,8 @@ def get_includes():
         ...
 
     '''
-    return [get_sketch_directory()] + base_node_rpc.get_includes()
+    return ([get_sketch_directory(), get_lib_directory()] +
+            base_node_rpc.get_includes())
 
 
 def get_sources():
@@ -44,7 +49,9 @@ def get_sources():
     Return Arduino source file paths.  This includes any supplementary source
     files that are not contained in Arduino libraries.
     '''
-    return get_sketch_directory().files('*.c*') + base_node_rpc.get_sources()
+    return (get_sketch_directory().files('*.c*') +
+            list(get_lib_directory().walkfiles('*.c*')) +
+            base_node_rpc.get_sources())
 
 
 def get_firmwares():
