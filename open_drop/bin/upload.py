@@ -1,4 +1,4 @@
-from arduino_rpc.upload import upload, parse_args
+from arduino_helpers.upload import upload, parse_args
 from .. import get_firmwares
 
 
