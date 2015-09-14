@@ -45,6 +45,6 @@ options(
                author_email='christian@fobel.net',
                url=URL,
                license='GPLv2',
-               install_requires=['wheeler.base_node_rpc>=0.10post16', 'arduino_helpers>=0.3post10'],
+               install_requires=['wheeler.base_node_rpc>=0.10post17', 'arduino_helpers>=0.3post10'],
                include_package_data=True,
                packages=[str(PROJECT_PREFIX)]))
