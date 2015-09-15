@@ -1,12 +1,9 @@
 from collections import OrderedDict
 
-import nadamq
 from path_helpers import path
 try:
+    import nadamq
     import base_node_rpc
-except ImportError:
-    pass
-try:
     from .config import Config, State
 except (ImportError, TypeError):
     pass
