@@ -8,6 +8,7 @@
 #include "Array.h"
 #include "RPCBuffer.h"
 #include "OpenDrop/CommandProcessor.h"
+#include "NodeCommandProcessor.h"
 #include "Node.h"
 
 
