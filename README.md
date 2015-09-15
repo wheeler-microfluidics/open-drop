@@ -13,7 +13,7 @@ This package contains:
 
 The Python package can be installed through `pip` using the following command:
 
-    pip install wheeler.open-drop
+    pip install open-drop
 
 ## Upload firmware ##
 
