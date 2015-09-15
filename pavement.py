@@ -18,7 +18,7 @@ PROJECT_PREFIX = [d for d in path('.').dirs()
                   if d.joinpath('Arduino').isdir()
                   and d.name not in ('build', )][0].name
 name = PROJECT_PREFIX.replace('_', '-')
-package_name = 'wheeler.' + name
+package_name = name
 rpc_module = import_module(PROJECT_PREFIX)
 VERSION = version.getVersion()
 URL='http://github.com/wheeler-microfluidics/%s.git' % name
@@ -38,13 +38,13 @@ options(
                   'BaseNodeState<StateMessage>'],
     rpc_classes=['open_drop::Node'],
     DEFAULT_ARDUINO_BOARDS=DEFAULT_ARDUINO_BOARDS,
-    setup=dict(name='wheeler.' + PROJECT_PREFIX.replace('_', '-'),
+    setup=dict(name=PROJECT_PREFIX.replace('_', '-'),
                version=VERSION,
                description='Arduino RPC node packaged as Python package.',
                author='Christian Fobel',
                author_email='christian@fobel.net',
                url=URL,
                license='GPLv2',
-               install_requires=['wheeler.base_node_rpc>=0.10post17', 'arduino_helpers>=0.3post10'],
+               install_requires=['base_node_rpc>=0.10post19', 'arduino_helpers>=0.3post10'],
                include_package_data=True,
                packages=[str(PROJECT_PREFIX)]))
