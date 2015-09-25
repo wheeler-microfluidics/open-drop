@@ -45,6 +45,6 @@ options(
                author_email='christian@fobel.net',
                url=URL,
                license='GPLv2',
-               install_requires=['base_node_rpc>=0.11post14',
+               install_requires=['base_node_rpc>=0.11post17',
                                  'arduino_helpers>=0.3post10'],
                include_package_data=True, packages=[str(PROJECT_PREFIX)]))
