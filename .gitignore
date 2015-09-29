@@ -12,6 +12,7 @@ build/*
 */Arduino/*/*config_validate.h
 */Arduino/*/*state_validate.h
 */Arduino/*/*RPCBuffer.h
+*/Arduino/*/NodeCommandProcessor.h
 */Arduino/library
 *.o
 */protobuf/nano
