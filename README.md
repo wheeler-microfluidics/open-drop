@@ -1,3 +1,4 @@
+![https://ci.appveyor.com/api/projects/status/github/wheeler-microfluidics/open-drop?branch=master&svg=true](https://ci.appveyor.com/api/projects/status/github/wheeler-microfluidics/open-drop?branch=master&svg=true)
 # open-drop #
 Control package for OpenDrop Digital Microfluidics Platform
 
